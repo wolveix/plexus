@@ -1,0 +1,377 @@
+#!/usr/bin/env bash
+HEADER_TEXT="\\e[93m=== Plexus v0.6 - Developed by Robert Thomas ===\\n"
+HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
+set -e
+
+function main () {
+  VERBOSE=6
+  declare -A LOG_LEVELS
+  LOG_LEVELS=([0]="emerg" [1]="alert" [2]="crit" [3]="err" [4]="warning" [5]="notice" [6]="info" [7]="debug")
+  function .log () {
+    local LEVEL=${1}
+    shift
+    if [ ${VERBOSE} -ge ${LEVEL} ]; then
+      echo "[${LOG_LEVELS[$LEVEL]}]" "$@"
+    fi
+  }
+}
+
+function func_about {
+    printf "$HEADER_TEXT$HEADER_SUBTEXT\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with RClone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Managing Director & Lead Software Developer at Arcruy.\\n  https://github.com/Wolveix/Plexus\\n"
+}
+
+function func_encode {
+  if [ -z "$audio_codec" ]; then audio_codec="aac"; fi
+  if [ -z "$ffmpeg_preset" ]; then ffmpeg_preset="veryfast"; fi
+  if [ -z "$video_codec" ]; then video_codec="h264"; fi
+  if [ -z "$video_library" ]; then video_library="libx264"; fi
+
+  while read line; do
+    PATH=${line%/*}
+    FILE=${line##*/}
+    NAME=${FILE%.*}
+    if [ ! -z "$rclone_remote" ]
+    then
+      printf "\\nDownloading: $FILE"
+      /usr/bin/rclone copy "$rclone_remote$line" /tmp/plexus/encode/convert --stats-log-level NOTICE --stats 30s
+      printf "\\nFile downloaded."
+    else
+      printf "\\nCopying: $FILE"
+      /bin/cp "$line" /tmp/plexus/encode/convert
+      "\\nFile copied."
+    fi
+    file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "/tmp/plexus/encode/convert/$FILE")
+  	file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "/tmp/plexus/encode/convert/$FILE")
+    printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
+
+    if [ -f "/tmp/plexus/encode/converted/$NAME.mkv" ]; then /bin/rm "/tmp/plexus/encode/converted/$NAME.mkv"; fi
+
+    if [ "$file_video_codec" == "$video_codec" ]
+    then
+      if [ "$file_audio_codec" != "$audio_codec" ]
+      then
+        /usr/bin/ffmpeg -i "/tmp/plexus/encode/convert/$FILE" -c:v copy -c:a "$audio_codec" -q:a 100 -profile:v baseline -level 3.0 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "/tmp/plexus/encode/converted/$NAME.mkv"
+      fi
+    else
+      if [ "$file_audio_codec" == "$audio_codec" ]
+      then
+        /usr/bin/ffmpeg -i "/tmp/plexus/encode/convert/$FILE" -c:v "$video_library" -c:a copy -q:a 100 -profile:v baseline -level 3.0 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "/tmp/plexus/encode/converted/$NAME.mkv"
+      else
+        /usr/bin/ffmpeg -i "/tmp/plexus/encode/convert/$FILE" -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -profile:v baseline -level 3.0 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "/tmp/plexus/encode/converted/$NAME.mkv"
+      fi
+    fi
+    printf "\\nFile successfully converted."
+    if [ ! -z "$rclone_remote" ] #If variable is not empty
+    then
+      printf "\\nDeleting original file from RClone remote.\\n"
+      /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
+      printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
+      /usr/bin/rclone move "/tmp/plexus/encode/converted/$NAME.mkv" "$rclone_remote$PATH" --stats-log-level NOTICE --stats 30s
+      printf "\\nFile successfully uploaded."
+    else
+      printf "\\nDeleting original file.\\n"
+      /bin/rm "$line"
+      printf "\\nOriginal file deleted.\\nMoving converted file to the correct location.\\n"
+      /bin/mv "/tmp/plexus/encode/converted/$NAME.mkv" "$line"
+      printf "\\nFile successfully moved."
+    fi
+    printf "\\nDeleting original file and delisting it.\\n"
+    /bin/rm "/tmp/plexus/encode/convert/$FILE"
+    /bin/grep -v "$line" "$list_file" > /tmp/plexus/list.txt; /bin/mv /tmp/plexus/list.txt "$list_file"
+    printf "\\nOperation successfully completed."
+  done < "$list_file"
+}
+
+function func_help {
+    printf "$HEADER_TEXT"
+    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n"
+    printf "\\nAvailable Commands:\\n"
+    printf "  about           Learn more about the program\\n"
+    printf "  encode          Begin processing the encode queue\\n"
+    printf "  help            Displays a list of available commands\\n"
+    printf "  list            Build a .txt file containing media with incorrect codecs\\n"
+}
+
+function func_list {
+  if [ -z "$audio_codec" ]; then audio_codec="aac"; fi
+  if [ -z "$list_file" ]; then list_file="/tmp/plexus/list.txt"; fi
+  if [ -z "$media_dir" ]; then media_dir="/mnt/plexdrive"; fi
+  if [ -z "$video_codec" ]; then video_codec="h264"; fi
+
+  printf "\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nVideo codec: $video_codec\\n\\n"
+
+  if [ -f $list_file ]
+  then
+      answer="waiting"
+      while [ ! -z $answer ]
+      do
+          read -r -n 1 -p 'This will delete the current list file. Do you want to continue? ' answer
+
+          case $answer in
+          "Y" | "y")
+              rm "$list_file"
+              answer=""
+              printf "\\n\\n"
+              ;;
+          "N" | "n")
+              printf "\\nYou can find the current list file here: $list_file\\n"
+              exit 4
+              ;;
+          *)
+              printf "\\nPlease enter yes or no.\\n"
+              ;;
+          esac
+      done
+  fi
+
+  printf "\\e[32mScanning directory...\\n"
+  while IFS= read -r line
+  do
+    PATH=${line%/*}
+    FILE=${line##*/}
+    NAME=${FILE%.*}
+  	printf "\\e[94mScanning: $line\\n"
+  	file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
+  	file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
+
+  	if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
+  	then
+  		echo "$line" >> $list_file
+  	fi
+  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
+  printf "\\e[32mScan complete! Run plexus encode to process the list.\\n"
+}
+
+### COMMAND HANDLER ###
+while getopts ":ahi" opt; do
+  case ${opt} in
+    a)
+      func_about
+      exit 0
+      ;;
+    h)
+      func_help
+      exit 0
+      ;;
+   \?)
+     printf "Invalid Option: -$OPTARG\\n"
+     exit 1
+     ;;
+  esac
+done
+shift $((OPTIND -1))
+
+command=$1; shift
+case "$command" in
+  about)
+    func_about
+    ;;
+  encode)
+    while getopts ":a:l:p:r:v:" opt; do
+      case $opt in
+        a)
+          case ${OPTARG,,} in
+            "" | "default" | "aac")
+                audio_codec="aac"
+                ;;
+            "ac3" | "ac-3" | "atsc")
+                audio_codec="ac3"
+                ;;
+            "dca" | "dts")
+                audio_codec="dts"
+                ;;
+            "flac")
+                audio_codec="flac"
+                ;;
+            "mp3" | "mpeg3")
+                audio_codec="mp3"
+                ;;
+            "opus")
+                audio_codec="opus"
+                ;;
+            *)
+                printf "You have not entered a valid audio codec.\\n"
+                exit 3
+                ;;
+          esac
+          ;;
+        l)
+          if [ -f "$OPTARG" ]
+          then
+            list_file="$OPTARG"
+          else
+            printf "You have not entered a valid list.\\n"
+            exit 1
+          fi
+          ;;
+        p)
+          case ${OPTARG,,} in
+            "ultrafast" | "superfast" | "faster" | "fast" | "medium" | "slow" | "slower" | "veryslow" | "placebo")
+              ffmpeg_preset="${OPTARG,,}"
+              ;;
+            "" | "default" | "veryfast")
+              ffmpeg_preset="veryfast"
+              ;;
+            *)
+              printf "You have not entered a valid preset.\\n"
+              exit 0
+              ;;
+          esac
+          ;;
+        r)
+          /usr/bin/rclone listremotes > /tmp/plexus/rclone/remotes.txt
+          if [ ! -z $(grep "$OPTARG" "/tmp/plexus/rclone/remotes.txt") ]
+          then
+            if [ "${OPTARG: -1}" == ":" ]
+            then
+                rclone_remote="$OPTARG"
+            else
+                rclone_remote="$OPTARG:"
+            fi
+          else
+            printf "You have not entered a valid remote.\\n"
+            exit 0
+          fi
+          ;;
+        v)
+          case ${OPTARG,,} in
+            "" | "default" | "x264" | "h.264" | "h264" | "avc" | "libx264")
+                video_codec="h264"
+                video_library="libx264"
+                ;;
+            "x265" | "h.265" | "h265" | "hevc" | "libx265")
+                video_codec="h265"
+                video_library="libx265"
+                ;;
+            "avi" | "divx" | "libxvid" | "mpeg4" | "mpeg-4" | "xvid")
+                video_codec="mpeg4"
+                video_library="libxvid"
+                ;;
+            *)
+                printf "You have not entered a valid video codec.\\n"
+                exit 2
+                ;;
+          esac
+          ;;
+        \?)
+          echo "Invalid option: -$OPTARG." >&2
+          exit 1
+          ;;
+        :)
+          echo "Option -$OPTARG requires an argument." >&2
+          exit 1
+          ;;
+      esac
+    done
+    if [ $OPTIND -eq 1 ]
+    then
+      printf "\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n\\nFlags:\\n"
+      printf "  -a              Audio codec. Default = aac\\n"
+      printf "  -l              List location. Default = /tmp/plexus/list.txt\\n"
+      printf "  -p              FFMpeg preset. Default = veryfast\\n"
+      printf "  -r              RClone remote. Use this for RClone integration\\n"
+      printf "  -v              Video codec. Default = h264\\n"
+      exit 0
+    fi
+    func_encode
+    shift $((OPTIND -1))
+    ;;
+  help)
+    func_help
+    ;;
+  list)
+    while getopts ":a:d:l:v:" opt; do
+      case $opt in
+        a)
+          case ${OPTARG,,} in
+            "" | "default" | "aac")
+                audio_codec="aac"
+                ;;
+            "ac3" | "ac-3" | "atsc")
+                audio_codec="ac3"
+                ;;
+            "dca" | "dts")
+                audio_codec="dts"
+                ;;
+            "flac")
+                audio_codec="flac"
+                ;;
+            "mp3" | "mpeg3")
+                audio_codec="mp3"
+                ;;
+            "opus")
+                audio_codec="opus"
+                ;;
+            *)
+                printf "You have not entered a valid audio codec.\\n"
+                exit 3
+                ;;
+          esac
+          ;;
+        d)
+          if [ -d "$OPTARG" ]
+          then
+              if [ "${OPTARG: -1}" == "/" ]
+              then
+                  media_dir="${OPTARG::-1}"
+              else
+                  media_dir="$OPTARG"
+              fi
+          else
+              printf "You have not entered a valid directory.\\n"
+              exit 1
+          fi
+          ;;
+        l)
+          list_file="$OPTARG"
+          list_dir=$(dirname "${list_file}")
+
+          if [ ! -d "$list_dir" ]
+          then
+              printf "You have not entered a valid list directory.\\n"
+              exit 1
+          fi
+          ;;
+        v)
+          case ${OPTARG,,} in
+            "" | "default" | "x264" | "h.264" | "h264" | "avc" | "libx264")
+                video_codec="h264"
+                ;;
+            "x265" | "h.265" | "h265" | "hevc" | "libx265")
+                video_codec="h265"
+                ;;
+            "avi" | "divx" | "libxvid" | "mpeg4" | "mpeg-4" | "xvid")
+                video_codec="mpeg4"
+                ;;
+            *)
+                printf "You have not entered a valid video codec.\\n"
+                exit 2
+                ;;
+          esac
+          ;;
+        \?)
+          printf "Invalid option: -$OPTARG.\\n"
+          exit 1
+          ;;
+        :)
+          printf "Option -$OPTARG requires an argument.\\n"
+          exit 1
+          ;;
+      esac
+    done
+    if [ $OPTIND -eq 1 ]
+    then
+      printf "\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n"
+      printf "  -a              Audio codec. Default = aac\\n"
+      printf "  -d              Media directory. Default = /mnt/plexdrive\\n"
+      printf "  -l              List location. Default = /tmp/plexus/list.txt\\n"
+      printf "  -v              Video codec. Default = h264\\n"
+      exit 0
+    fi
+    func_list
+    shift $((OPTIND -1))
+    ;;
+esac
+### COMMAND HANDLER ###
+
+main "$@"

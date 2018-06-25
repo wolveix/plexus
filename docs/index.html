@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>Plexus Suite | Documentation</title>
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="description" content="">
+      <meta name="author" content="">
+      <link rel="shortcut icon" href="favicon.ico">
+      <link href='http://fonts.googleapis.com/css?family=Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' rel='stylesheet' type='text/css'>
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/css/bootstrap.min.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/themes/prism-okaidia.min.css">
+      <link id="theme-style" rel="stylesheet" href="/assets/css/styles.css">
+      <!--[if lt IE 9]> <script src="https://oss.maxcdn.com/html5shiv/3.7.2/html5shiv.min.js"></script> <script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script><![endif]-->
+   </head>
+   <body class="body-orange">
+      <div class="page-wrapper">
+         <header id="header" class="header">
+            <div class="container">
+               <div class="branding">
+                  <h1 class="logo"> <a href="/"> <span aria-hidden="true" class="icon_documents_alt icon"></span> <span class="text-highlight">Plexus</span><span class="text-bold">Suite</span> </a> </h1>
+               </div>
+               <ol class="breadcrumb">
+                  <li class="active"><a href="/">Home</a></li>
+                  <li><a href="/help">Help</a></li>
+                  <li><a href="/versions">Versions</a></li>
+               </ol>
+            </div>
+         </header>
+         <div class="doc-wrapper">
+            <div class="container">
+               <div id="doc-header" class="doc-header text-center">
+                  <h1 class="doc-title"><i class="icon fa fa-share"></i> Plexus Suite v0.6</h1>
+                  <div class="meta"><i class="fa fa-clock-o"></i> Last updated: June 25th, 2018</div>
+               </div>
+               <div class="doc-body">
+                  <div class="doc-content">
+                     <div class="content-inner">
+                       <section id="about-section" class="doc-section">
+                          <h2 class="section-title">About</h2>
+                          <div class="section-block">
+                             <p>Plexus is a suite of easy-to-use tools to help manage your media collection. You can build a list of media within your collection which is incorrectly encoded, and then re-encode all of that media automatically. Plexus also integrates smoothly with RClone.</p><br><p>I created this suite because I knew that I would need a simple CLI solution to re-encoding all of my media at some point in the future, and no other solution met my requirements.</p><br><p>Thank you to <a href="https://github.com/masonr" target="_blank">Mason Rowe</a> for the advice and starting scripts.</p><br><p><strong><a href="https://github.com/Wolveix" target="_blank">Robert Thomas</a> - <a href="https://robt.me" target="_blank">Managing Director & Lead Software Developer</a> at <a href="https://arcruy.com" target="_blank">Arcruy</a></strong></p>
+                          </div>
+                       </section>
+                        <section id="installation-section" class="doc-section">
+                           <h2 class="section-title">Installation</h2>
+                           <div id="installation-automatic" class="section-block">
+                              <h3 class="block-title">Automatic</h3>
+                              <p>You can automatically install Plexus by running the following line via a supported command line interface: </p>
+                              <p><code>curl https://plexus.robt.me/install.sh | sudo bash</code></p>
+                           </div>
+                           <div id="installation-manual" class="section-block">
+                              <h3 class="block-title">Manual</h3>
+                              <p>Alternatively, you can manually install Plexus to a custom location on your device.</p>
+                              <br>
+                              <p>Install any missing dependencies and create all of the temporary folders required:</p>
+                              <p><code>sudo apt-get install curl ffmpeg unzip -y</code></p>
+                              <p><code>mkdir -p /mnt/plexus /tmp/plexus /tmp/plexus/encode /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone</code></p>
+                              <br>
+                              <p>Next, download the executable itself:</p>
+                              <p><code>curl -O https://plexus.robt.me/versions/releases/latest/plexus</code></p>
+                              <br>
+                              <p>Finally, correct the file permissions and move it into your respective operating system's application directory. The following example is for Linux:</p>
+                              <p><code>chmod u+x plexus && chmod 755 plexus</code></p>
+                              <p><code>sudo chown root:root plexus</code></p>
+                              <p><code>sudo mv plexus /usr/bin/plexus</code></p>
+                              <br>
+                              <h3>That's it!</h3>
+                              <p>The automated script checks for an RClone installation too as Plexus natively supports it. To install RClone:</p>
+                              <p><code>curl https://rclone.org/install.sh | sudo bash</code></p>
+                           </div>
+                        </section>
+                     </div>
+                  </div>
+                  <div class="doc-sidebar hidden-xs">
+                     <nav id="doc-nav">
+                        <ul id="doc-menu" class="nav doc-menu" data-spy="affix">
+                           <li><a class="scrollto" href="#about-section">About</a></li>
+                           <li>
+                              <a class="scrollto" href="#installation-section">Installation</a>
+                              <ul class="nav doc-sub-menu">
+                                 <li><a class="scrollto" href="#installation-automatic">Automatic</a></li>
+                                 <li><a class="scrollto" href="#installation-manual">Manual</a></li>
+                              </ul>
+                           </li>
+                        </ul>
+                     </nav>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+      <footer id="footer" class="footer text-center">
+         <div class="container"> <small class="copyright">App developed by <a href="https://github.com/Wolveix" target="_blank">Robert Thomas</a> | Site template designed by <a href="http://themes.3rdwavemedia.com/" targe="_blank">Xiaoying Riley</a></small> </div>
+      </footer>
+      <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/prism.min.js"></script> <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery.scrollto@2.1.2/jquery.scrollTo.min.js"></script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.matchHeight/0.7.2/jquery.matchHeight-min.js"></script> <script type="text/javascript" src="/assets/js/main.js"></script>
+   </body>
+</html>

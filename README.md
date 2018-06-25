@@ -1,14 +1,41 @@
-# Plex Encode
-This script will create a list of media from your Plex server that needs to be re-encoded.
+# Plexus
+A suite of tools to help manage the media behind a Plex server.
 
 ## Install
 
-First, install required dependencies:
+### Automatic
+You can automatically install Plexus by running the following line via a supported command line interface:
 ``` bash
-sudo apt-get install ffmpeg mediainfo -y
+curl https://plexus.robt.me/install.sh | sudo bash
 ```
-Then, create the required directories:
+
+### Manual
+Alternatively, you can manually install Plexus to a custom location on your device.
+Install any missing dependencies and create all of the temporary folders required:
 ``` bash
-sudo mkdir /root/plex-encode /tmp/plex-encode /tmp/plex-encode/convert /tmp/plex-encode/converted
+sudo apt-get install curl ffmpeg unzip -y mkdir -p /mnt/plexus /tmp/plexus /tmp/plexus/encode /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone
 ```
-Next, run the build-list.sh script
+
+Next, download the executable itself:
+``` bash
+curl -O https://plexus.robt.me/versions/releases/latest/plexus
+```
+
+Finally, correct the file permissions and move it into your respective operating system's application directory. The following example is for Linux:
+``` bash
+chmod u+x plexus && chmod 755 plexus
+sudo chown root:root plexus
+sudo mv plexus /usr/bin/plexus
+```
+
+#### That's it!
+
+The automated script checks for an RClone installation too as Plexus natively supports it. To install RClone:
+``` bash
+curl https://rclone.org/install.sh | sudo bash
+```
+
+## Credits
+- Creator: Robert Thomas ([Wolveix](https://github.com/Wolveix))
+- Original Scripts: Mason Rowe ([MasonR](https://github.com/MasonR))
+- License: [GNU General Public License v3.0](https://github.com/Wolveix/Plexus/blob/master/LICENSE)
