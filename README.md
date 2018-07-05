@@ -17,6 +17,12 @@ sudo apt-get install curl ffmpeg unzip -y
 mkdir -p /mnt/plexus /tmp/plexus /tmp/plexus/encode /tmp/plexus/encode/convert /tmp/plexus/encode/converted $HOME/.config/plexus
 ```
 
+Download the default config file and move it into the correct location:
+``` bash
+curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf
+mv plexus.conf "$HOME"/.config/plexus/
+```
+
 Next, download the executable itself:
 ``` bash
 curl -O https://plexus.robt.me/versions/releases/latest/plexus
