@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\n\\e[93m=== Plexus v0.7.3b - Developed by Robert Thomas ==="
+printf "\\n\\e[93m=== Plexus v0.7.3c - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/plexus ==="
 printf "\\n\\e[32mInstalling missing dependencies.\\n\\n\\e[94m"
 apt-get install curl ffmpeg unzip -y
