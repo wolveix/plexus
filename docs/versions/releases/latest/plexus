@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.7.3 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.7.3b - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -284,7 +284,7 @@ function func_encode {
     NAME=${FILE%.*}
     if [ ! -z "$rclone_remote" ]
     then
-      printf "\\nDownloading: $FILE"
+      printf "\\nDownloading: $FILE\\n"
       /usr/bin/rclone copy "$rclone_remote$line" "$convert_dir" --stats-log-level NOTICE --stats 30s
       printf "\\nFile downloaded."
     else
@@ -310,14 +310,14 @@ function func_encode {
     else
       if [ "$file_audio_codec" == "$audio_codec" ]
       then
-        if [ "$video_library" == "h264"]
+        if [ "$video_codec" == "h264" ]
         then
           /usr/bin/ffmpeg -i "$convert_dir/$FILE" -c:v "$video_library" -crf 18 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
         else
           /usr/bin/ffmpeg -i "$convert_dir/$FILE" -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
         fi
       else
-        if [ "$video_library" == "h264"]
+        if [ "$video_codec" == "h264" ]
         then
           /usr/bin/ffmpeg -i "$convert_dir/$FILE" -c:v "$video_library" -crf 18 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
         else
