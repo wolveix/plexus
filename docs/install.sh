@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-printf "\\n\\e[93m=== Plexus v0.7 - Developed by Robert Thomas ==="
+printf "\\n\\e[93m=== Plexus v0.7.2 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/plexus ==="
 printf "\\n\\e[32mInstalling missing dependencies.\\n\\n\\e[94m"
 apt-get install curl ffmpeg unzip -y
 printf "\\n\\e[32mCreating directories if they don't already exist.\\n\\e[94m"
-mkdir -p /mnt/plexus /tmp/plexus /tmp/plexus/encode /tmp/plexus/encode/convert /tmp/plexus/encode/converted $HOME/.config/plexus
+mkdir -p /mnt/plexus /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone $HOME/.config/plexus
 rclone_version=$(rclone -V)
 if [[ "$rclone_version" != *"os/arch: "* ]]; then printf "\\n\\e[32mInstalling RClone.\\n\\n\\e[94m"; curl https://rclone.org/install.sh | sudo bash; printf "\\e[32mRClone installed.\\n"; fi
 rclone_remotes=$(rclone listremotes)
@@ -36,4 +36,4 @@ case ${OS,,} in
 esac
 
 printf "\\n\\e[32mInstall completed!\\n"
-printf "\\nPlease run 'plexus help' to see a list of available commands.\\n"
+printf "\\nPlease run 'plexus help' to see a list of available commands.\\n\\e[0m"

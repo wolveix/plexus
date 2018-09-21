@@ -279,7 +279,7 @@ function func_config {
 
 function func_encode {
   while read line; do
-    PATH=${line%/*}
+    DIRP=${line%/*}
     FILE=${line##*/}
     NAME=${FILE%.*}
     if [ ! -z "$rclone_remote" ]
@@ -321,7 +321,7 @@ function func_encode {
       printf "\\nDeleting original file from RClone remote.\\n"
       /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
       printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
-      /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$PATH" --stats-log-level NOTICE --stats 30s
+      /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
       printf "\\nFile successfully uploaded."
     else
       printf "\\nDeleting original file.\\n"
@@ -371,7 +371,7 @@ function func_list {
   printf "\\e[32mScanning directory...\\n"
   while IFS= read -r line
   do
-    PATH=${line%/*}
+    DIRP=${line%/*}
     FILE=${line##*/}
     NAME=${FILE%.*}
       printf "\\e[94mScanning: $line\\n"

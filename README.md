@@ -14,7 +14,7 @@ Alternatively, you can manually install Plexus to a custom location on your devi
 Install any missing dependencies and create all of the temporary folders required:
 ``` bash
 sudo apt-get install curl ffmpeg unzip -y
-mkdir -p /mnt/plexus /tmp/plexus /tmp/plexus/encode /tmp/plexus/encode/convert /tmp/plexus/encode/converted $HOME/.config/plexus
+mkdir -p /mnt/plexus /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone $HOME/.config/plexus
 ```
 
 Download the default config file and move it into the correct location:
