@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.7.3c - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.7.3d - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -342,7 +342,7 @@ function func_encode {
     fi
     printf "\\nDeleting original file and delisting it.\\n"
     /bin/rm "$convert_dir/$FILE"
-    /bin/sed -i "/$line/d" "$list_file"
+    /bin/sed -i 1d "$list_file"
     printf "\\nOperation successfully completed."
   done < "$list_file"
 }
