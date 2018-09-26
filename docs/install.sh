@@ -1,18 +1,17 @@
 #!/usr/bin/env bash
-printf "\\n\\e[93m=== Plexus v0.7.3d - Developed by Robert Thomas ==="
-printf "\\n=== https://github.com/Wolveix/plexus ==="
-printf "\\n\\e[32mInstalling missing dependencies.\\n\\n\\e[94m"
-apt-get install curl ffmpeg unzip -y
-printf "\\n\\e[32mCreating directories if they don't already exist.\\n\\e[94m"
-mkdir -p /mnt/plexus /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone $HOME/.config/plexus
-rclone_version=$(rclone -V)
-if [[ "$rclone_version" != *"os/arch: "* ]]; then printf "\\n\\e[32mInstalling RClone.\\n\\n\\e[94m"; curl https://rclone.org/install.sh | sudo bash; printf "\\e[32mRClone installed.\\n"; fi
-rclone_remotes=$(rclone listremotes)
-if [ -z "$rclone_remotes" ]; then printf "\\n\\e[32mYou don't have any RClone remotes setup. Set one up by running 'rclone config'\\n\\n\\e[94m"; fi
+printf "\\e[93m=== Plexus v0.8 - Developed by Robert Thomas ==="
+printf "\\n=== https://github.com/Wolveix/Plexus ==="
+printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
+apt-get install curl ffmpeg -y -qq
+printf "\\n\\e[36mCreating directories if they don't already exist.\\n\\e[94m"
+mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 cd /tmp/plexus || exit
-curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf
-mv plexus.conf "$HOME"/.config/plexus/
-curl -O https://plexus.robt.me/versions/releases/latest/plexus
+if [[ -f "$HOME/.config/plexus/plexus.conf" ]]
+then
+  curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf 2>/dev/null
+  mv plexus.conf "$HOME"/.config/plexus/
+fi
+curl -O https://plexus.robt.me/versions/releases/latest/plexus 2>/dev/null
 chmod u+x plexus
 
 OS="$(uname)"
