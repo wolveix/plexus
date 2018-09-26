@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.1 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -7,7 +7,7 @@ then
   source "$HOME"/.config/plexus/plexus.conf
 else
   mkdir -p "$HOME"/.config/plexus/
-  curl -O https://robt.me/plexus.conf 2>/dev/null
+  curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf 2>/dev/null
   mv plexus.conf "$HOME"/.config/plexus/
   printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
 fi
@@ -428,7 +428,7 @@ function func_install {
         read -r -n 1 -p '' answer
         case $answer in
         "1")
-            printf "\\n\\nWhich dependency?\\n1 - All\\n2 - FFmpeg\\n3 - Fuse\\n4 - RClone\\n"
+            printf "\\n\\nWhich dependency?\\n1 - All\\n2 - FFmpeg\\n3 - Fuse\\n4 - RClone\\n0 - Exit\\n"
             answer="waiting"
             while [ ! -z $answer ]
             do
@@ -496,6 +496,7 @@ function func_install {
                   esac
                   ;;
               "0")
+                  printf "\\n\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
                   exit 0
                   ;;
               *)
