@@ -343,6 +343,7 @@ function func_config {
 function func_encode {
   while read line; do
     if [ -z $line ]
+    then
       DIRP=${line%/*}
       FILE=${line##*/}
       NAME=${FILE%.*}
