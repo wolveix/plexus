@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.1 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.2 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -342,77 +342,81 @@ function func_config {
 
 function func_encode {
   while read line; do
-    DIRP=${line%/*}
-    FILE=${line##*/}
-    NAME=${FILE%.*}
-    if [ ! -z "$rclone_remote" ]
-    then
-      if [ "$dependency_rclone" = true ]
+    if [ -z $line ]
+      DIRP=${line%/*}
+      FILE=${line##*/}
+      NAME=${FILE%.*}
+      if [ ! -z "$rclone_remote" ]
       then
-        printf "Downloading: $FILE\\n"
-        /usr/bin/rclone copy "$rclone_remote$line" "$convert_dir" --stats-log-level NOTICE --stats 30s
-        printf "\\nFile downloaded."
-      else
-        printf "\\e[31mPlease install RClone to use an RClone remote with this command\\e[0m\\n"
-        exit 0
-      fi
-    else
-      printf "Copying: $FILE"
-      /bin/cp "$line" "$convert_dir"
-      printf "\\nFile copied."
-    fi
-    file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-    file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-    printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
-
-    if [ -f "$converted_dir/$FILE" ]
-    then
-      /bin/rm "$converted_dir/$FILE"
-    fi
-
-    if [ "$file_video_codec" == "$video_codec" ]
-    then
-      if [ "$file_audio_codec" != "$audio_codec" ]
-      then
-        /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-      fi
-    else
-      if [ "$file_audio_codec" == "$audio_codec" ]
-      then
-        if [ "$video_codec" == "h264" ]
+        if [ "$dependency_rclone" = true ]
         then
-          /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          printf "Downloading: $FILE\\n"
+          /usr/bin/rclone copy "$rclone_remote$line" "$convert_dir" --stats-log-level NOTICE --stats 30s
+          printf "\\nFile downloaded."
         else
-          /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          printf "\\e[31mPlease install RClone to use an RClone remote with this command\\e[0m\\n"
+          exit 0
         fi
       else
-        if [ "$video_codec" == "h264" ]
+        printf "Copying: $FILE"
+        /bin/cp "$line" "$convert_dir"
+        printf "\\nFile copied."
+      fi
+      file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
+      file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
+      printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
+
+      if [ -f "$converted_dir/$FILE" ]
+      then
+        /bin/rm "$converted_dir/$FILE"
+      fi
+
+      if [ "$file_video_codec" == "$video_codec" ]
+      then
+        if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+        fi
+      else
+        if [ "$file_audio_codec" == "$audio_codec" ]
+        then
+          if [ "$video_codec" == "h264" ]
+          then
+            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          else
+            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          fi
         else
-          /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          if [ "$video_codec" == "h264" ]
+          then
+            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          else
+            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          fi
         fi
       fi
-    fi
-    printf "\\nFile successfully converted."
-    if [ ! -z "$rclone_remote" ] #If variable is not empty
-    then
-      printf "\\nDeleting original file from RClone remote.\\n"
-      /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
-      printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
-      /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
-      printf "\\nFile successfully uploaded."
+      printf "\\nFile successfully converted."
+      if [ ! -z "$rclone_remote" ] #If variable is not empty
+      then
+        printf "\\nDeleting original file from RClone remote.\\n"
+        /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
+        printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
+        /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
+        printf "\\nFile successfully uploaded."
+      else
+        printf "\\nDeleting original file.\\n"
+        /bin/rm "$line"
+        printf "\\nOriginal file deleted.\\nMoving converted file to the correct location.\\n"
+        /bin/mv "$converted_dir/$NAME.mkv" "$line"
+        printf "\\nFile successfully moved."
+      fi
+      printf "\\nDeleting original file and delisting it.\\n"
+      /bin/rm "$convert_dir/$FILE"
+      /bin/sed -i 1d "$list_file"
+      printf "\\nOperation successfully completed.\\n"
     else
-      printf "\\nDeleting original file.\\n"
-      /bin/rm "$line"
-      printf "\\nOriginal file deleted.\\nMoving converted file to the correct location.\\n"
-      /bin/mv "$converted_dir/$NAME.mkv" "$line"
-      printf "\\nFile successfully moved."
+      /bin/sed -i 1d "$list_file"
     fi
-    printf "\\nDeleting original file and delisting it.\\n"
-    /bin/rm "$convert_dir/$FILE"
-    /bin/sed -i 1d "$list_file"
-    printf "\\nOperation successfully completed."
   done < "$list_file"
 }
 
@@ -569,17 +573,9 @@ function func_list {
 function func_mount {
   if [ -z $rclone_remote ]
   then
-    if [ -z $rclone_cache ]
-    then
-      printf "\\e[36mMounting RClone cache to $media_dir\\n\\e[0m"
-      /usr/bin/rclone mount $rclone_cache $media_dir --allow-other --buffer-size 512M --dir-cache-time 72h --drive-chunk-size 32M --fast-list --poll-interval 10m --vfs-read-chunk-size 128M --vfs-read-chunk-size-limit off &
-      find /mnt/plexus -type f
-      printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
-    else
-      printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
-      /usr/bin/rclone mount $rclone_remote $media_dir --allow-other &
-      printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
-    fi
+    printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
+    /usr/bin/rclone mount $rclone_remote $media_dir --allow-non-empty --allow-other --buffer-size 256M --dir-cache-time 12h --fast-list --poll-interval 10m &
+    printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
   else
     printf "\\e[32mPlease specify the RClone remote (option: cache) via the config function\\n\\e[0m"
   fi
