@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.2 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.3 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -376,23 +376,63 @@ function func_encode {
       then
         if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          then
+            printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            then
+              printf "\\nAn unknown error occured with FFmpeg\\n"
+              exit 0
+            fi
+          fi
         fi
       else
         if [ "$file_audio_codec" == "$audio_codec" ]
         then
           if [ "$video_codec" == "h264" ]
           then
-            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            then
+              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              then
+                printf "\\nAn unknown error occured with FFmpeg\\n"
+                exit 0
+              fi
+            fi
           else
-            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            then
+              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              then
+                printf "\\nAn unknown error occured with FFmpeg\\n"
+                exit 0
+              fi
+            fi
           fi
         else
           if [ "$video_codec" == "h264" ]
           then
-            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-          else
-            /usr/bin/ffmpeg -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            then
+              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              then
+            	printf "\\nAn unknown error occured with FFmpeg\\n"
+            	exit 0
+              fi
+            fi
+            else
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            then
+              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              then
+            	printf "\\nAn unknown error occured with FFmpeg\\n"
+            	exit 0
+              fi
+            fi
           fi
         fi
       fi
