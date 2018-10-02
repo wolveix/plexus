@@ -365,13 +365,12 @@ function func_encode {
       fi
       file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-      stream_id=$(/usr/bin/ffprobe "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs")
-      if [ ! -z "$stream_id" ]
+
+      stream_id=$(/usr/bin/ffprobe "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs" || :)
+      if [ -n "$stream_id" ]
       then
         exclude_stream=$(echo "$stream_id" | grep -o -P '(?<=#).*(?=\()')
         exclude_stream="-map -$exclude_stream"
-      else
-        exclude_stream=""
       fi
       printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
 
@@ -384,7 +383,7 @@ function func_encode {
       then
         if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
           then
             printf "\\nAn unknown error occurred with FFmpeg.\\n"
             exit 0
@@ -395,13 +394,13 @@ function func_encode {
         then
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:17 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
@@ -410,13 +409,13 @@ function func_encode {
         else
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
