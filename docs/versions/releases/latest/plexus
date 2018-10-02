@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.3 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.4 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -12,14 +12,14 @@ else
   printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
 fi
 
-if [ $(dpkg-query -W -f='${Status}' ffmpeg 2>/dev/null | grep -c "ok installed") -eq 1 ]
+if [ "$(dpkg-query -W -f='${Status}' ffmpeg 2>/dev/null | grep -c "ok installed")" -eq 1 ]
 then
   dependency_ffmpeg=true
 else
   dependency_ffmpeg=false
 fi
 
-if [ $(dpkg-query -W -f='${Status}' fuse 2>/dev/null | grep -c "ok installed") -eq 1 ]
+if [ "$(dpkg-query -W -f='${Status}' fuse 2>/dev/null | grep -c "ok installed")" -eq 1 ]
 then
   dependency_fuse=true
 else
@@ -40,7 +40,7 @@ function main () {
   function .log () {
     local LEVEL=${1}
     shift
-    if [ ${VERBOSE} -ge ${LEVEL} ]; then
+    if [ "${VERBOSE}" -ge "${LEVEL}" ]; then
       echo "[${LOG_LEVELS[$LEVEL]}]" "$@"
     fi
   }
@@ -365,6 +365,14 @@ function func_encode {
       fi
       file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
+      stream_id=$(/usr/bin/ffprobe "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs")
+      if [ ! -z "$stream_id" ]
+      then
+        exclude_stream=$(echo "$stream_id" | grep -o -P '(?<=#).*(?=\()')
+        exclude_stream="-map -$exclude_stream"
+      else
+        exclude_stream=""
+      fi
       printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
 
       if [ -f "$converted_dir/$FILE" ]
@@ -376,14 +384,10 @@ function func_encode {
       then
         if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
           then
-            printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-            then
-              printf "\\nAn unknown error occured with FFmpeg\\n"
-              exit 0
-            fi
+            printf "\\nAn unknown error occurred with FFmpeg.\\n"
+            exit 0
           fi
         fi
       else
@@ -391,47 +395,31 @@ function func_encode {
         then
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:17 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
-              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-              then
-                printf "\\nAn unknown error occured with FFmpeg\\n"
-                exit 0
-              fi
+              printf "\\nAn unknown error occurred with FFmpeg.\\n"
+              exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
-              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-              then
-                printf "\\nAn unknown error occured with FFmpeg\\n"
-                exit 0
-              fi
+              printf "\\nAn unknown error occurred with FFmpeg.\\n"
+              exit 0
             fi
           fi
         else
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
-              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-              then
-            	printf "\\nAn unknown error occured with FFmpeg\\n"
-            	exit 0
-              fi
+              printf "\\nAn unknown error occurred with FFmpeg.\\n"
+              exit 0
             fi
-            else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          else
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 "$exclude_stream" -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
-              printf "\\nError reported by FFMpeg\\nTrying again without any subtitles\\n"
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 -map -0:s -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
-              then
-            	printf "\\nAn unknown error occured with FFmpeg\\n"
-            	exit 0
-              fi
+              printf "\\nAn unknown error occurred with FFmpeg.\\n"
+              exit 0
             fi
           fi
         fi
@@ -697,7 +685,7 @@ case "$command" in
           ;;
         r)
           /usr/bin/rclone listremotes > $HOME/.plexus/rclone/remotes.txt
-          if [ ! -z $(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt") ]
+          if [ ! -z "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]
           then
             if [ "${OPTARG: -1}" == ":" ]
             then
