@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.4 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.5 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -365,7 +365,6 @@ function func_encode {
       fi
       file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-
       stream_id=$(/usr/bin/ffprobe "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs" || :)
       if [ -n "$stream_id" ]
       then
@@ -388,6 +387,8 @@ function func_encode {
             printf "\\nAn unknown error occurred with FFmpeg.\\n"
             exit 0
           fi
+        else
+          /bin/rm "$convert_dir/$FILE"
         fi
       else
         if [ "$file_audio_codec" == "$audio_codec" ]
@@ -424,24 +425,31 @@ function func_encode {
         fi
       fi
       printf "\\nFile successfully converted."
-      if [ ! -z "$rclone_remote" ] #If variable is not empty
+      if [ -f "$convert_dir/$FILE" ]
       then
-        printf "\\nDeleting original file from RClone remote.\\n"
-        /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
-        printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
-        /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
-        printf "\\nFile successfully uploaded."
+        if [ ! -z "$rclone_remote" ] #If variable is not empty
+        then
+          printf "\\nDeleting original file from RClone remote.\\n"
+          /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
+          printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
+          /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
+          printf "\\nFile successfully uploaded."
+        else
+          printf "\\nDeleting original file.\\n"
+          /bin/rm "$line"
+          printf "\\nOriginal file deleted.\\nMoving converted file to the correct location.\\n"
+          /bin/mv "$converted_dir/$NAME.mkv" "$line"
+          printf "\\nFile successfully moved."
+        fi
+        printf "\\nDeleting original file and delisting it.\\n"
+        /bin/rm "$convert_dir/$FILE"
+        /bin/sed -i 1d "$list_file"
+        printf "\\nOperation successfully completed.\\n"
       else
-        printf "\\nDeleting original file.\\n"
-        /bin/rm "$line"
-        printf "\\nOriginal file deleted.\\nMoving converted file to the correct location.\\n"
-        /bin/mv "$converted_dir/$NAME.mkv" "$line"
-        printf "\\nFile successfully moved."
+        printf "\\nFile codecs are already correct. Delisting it.\\n"
+        /bin/sed -i 1d "$list_file"
+        printf "\\nOperation successfully completed.\\n"
       fi
-      printf "\\nDeleting original file and delisting it.\\n"
-      /bin/rm "$convert_dir/$FILE"
-      /bin/sed -i 1d "$list_file"
-      printf "\\nOperation successfully completed.\\n"
     else
       /bin/sed -i 1d "$list_file"
     fi
