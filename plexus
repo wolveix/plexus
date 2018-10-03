@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.5 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.6 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -365,12 +365,40 @@ function func_encode {
       fi
       file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-      stream_id=$(/usr/bin/ffprobe "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs" || :)
-      if [ -n "$stream_id" ]
+      stream_count=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -c "Subtitle: hdmv_pgs" || :)
+      if [ "$stream_count" -gt 0 ]
       then
-        exclude_stream=$(echo "$stream_id" | grep -o -P '(?<=#).*(?=\()')
-        exclude_stream="-map -$exclude_stream"
+        stream_id=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs" || :)
+        if [ "$stream_count" = 1 ]
+        then
+          exclude_stream=$(echo "$stream_id" | grep -oP '(?<=#).*(?=\()')
+          exclude_stream="-map -$exclude_stream"
+        else
+          counter=0
+          until [ "$counter" = "$stream_count" ]
+          do
+            counter=$((counter+1))
+            excluded_stream="$(echo "$stream_id" |& grep -oP '(?<=#).*(?=\()' |& sed -n "${counter}"p)"
+            if [ ${#excluded_stream} -gt 4 ]
+            then
+              excluded_stream=${excluded_stream:0:3}
+            fi
+
+            if [ ! -z $excluded_stream ]
+            then
+              if [ "$exclude_stream" = "*$excluded_stream*" ]
+              then
+                counter="$stream_count"
+              else
+                exclude_stream="$exclude_stream -map -$excluded_stream"
+              fi
+            fi
+            last_stream=$excluded_stream
+            excluded_stream=""
+          done
+        fi
       fi
+      printf "\\n\\n$exclude_stream\\n\\n"
       printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
 
       if [ -f "$converted_dir/$FILE" ]
@@ -547,7 +575,7 @@ function func_install {
             ;;
         "2")
             printf "\\n\\nThis won't clear your current config file ($HOME/.config/plexus/plexus.conf).\\n"
-            curl https://plexus.robt.me/install.sh | sudo bash
+            curl https://plexus.robt.me/install.sh 2>/dev/null | sudo bash
             exit 0
             ;;
         "0")
