@@ -363,6 +363,7 @@ function func_encode {
         /bin/cp "$line" "$convert_dir"
         printf "\\nFile copied."
       fi
+      exclude_stream=""
       file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       stream_count=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -c "Subtitle: hdmv_pgs" || :)
