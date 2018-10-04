@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.5 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.6 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -398,7 +398,6 @@ function func_encode {
           done
         fi
       fi
-      printf "\\n\\n$exclude_stream\\n\\n"
       printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n"
 
       if [ -f "$converted_dir/$FILE" ]
@@ -410,7 +409,7 @@ function func_encode {
       then
         if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
           then
             printf "\\nAn unknown error occurred with FFmpeg.\\n"
             exit 0
@@ -423,13 +422,13 @@ function func_encode {
         then
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a copy -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
@@ -438,13 +437,13 @@ function func_encode {
         else
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -profile:v high -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -q:a 100 -preset "$ffmpeg_preset" -strict -2 -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
             then
               printf "\\nAn unknown error occurred with FFmpeg.\\n"
               exit 0
@@ -638,7 +637,7 @@ function func_mount {
   if [ -z $rclone_remote ]
   then
     printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
-    /usr/bin/rclone mount $rclone_remote $media_dir --allow-non-empty --allow-other --buffer-size 256M --dir-cache-time 12h --fast-list --poll-interval 10m &
+    /usr/bin/rclone mount $rclone_remote $media_dir --allow-non-empty --allow-other --cache-db-purge --fast-list --poll-interval 10m &
     printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
   else
     printf "\\e[32mPlease specify the RClone remote (option: cache) via the config function\\n\\e[0m"
