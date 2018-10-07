@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.6 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.7 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -372,19 +372,14 @@ function func_encode {
         stream_id=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs" || :)
         if [ "$stream_count" = 1 ]
         then
-          exclude_stream=$(echo "$stream_id" | grep -oP '(?<=#).*(?=\()')
+          exclude_stream=$(echo "$stream_id" | grep -oP '0:[0-9]{1,3}')
           exclude_stream="-map -$exclude_stream"
         else
           counter=0
           until [ "$counter" = "$stream_count" ]
           do
             counter=$((counter+1))
-            excluded_stream="$(echo "$stream_id" |& grep -oP '(?<=#).*(?=\()' |& sed -n "${counter}"p)"
-            if [ ${#excluded_stream} -gt 4 ]
-            then
-              excluded_stream=${excluded_stream:0:3}
-            fi
-
+            excluded_stream="$(echo "$stream_id" |& grep -oP '0:[0-9]{1,3}' |& sed -n "${counter}"p)"
             if [ ! -z $excluded_stream ]
             then
               if [ "$exclude_stream" = "*$excluded_stream*" ]
