@@ -366,10 +366,10 @@ function func_encode {
       exclude_stream=""
       file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
       file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-      stream_count=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -c "Subtitle: hdmv_pgs" || :)
+      stream_count=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
       if [ "$stream_count" -gt 0 ]
       then
-        stream_id=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep "Subtitle: hdmv_pgs" || :)
+        stream_id=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
         if [ "$stream_count" = 1 ]
         then
           exclude_stream=$(echo "$stream_id" | grep -oP '0:[0-9]{1,3}')
