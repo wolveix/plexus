@@ -380,7 +380,7 @@ function func_encode {
           do
             counter=$((counter+1))
             excluded_stream="$(echo "$stream_id" |& grep -oP '0:[0-9]{1,3}' |& sed -n "${counter}"p)"
-            if [ ! -z $excluded_stream ]
+            if [ ! -z "$excluded_stream" ]
             then
               if [ "$exclude_stream" = "*$excluded_stream*" ]
               then
@@ -389,7 +389,6 @@ function func_encode {
                 exclude_stream="$exclude_stream -map -$excluded_stream"
               fi
             fi
-            last_stream=$excluded_stream
             excluded_stream=""
           done
         fi
