@@ -1,0 +1,31 @@
+#!/bin/bash
+printf "\\n\\nWhich version?\\n1 - FFmpeg\\n2 - FFmpeg (custom)\\n0 - Exit\\n"
+answer="waiting"
+while [ ! -z $answer ]
+do
+  read -r -n 1 -p '' answer
+  case $answer in
+  "1")
+      printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
+      apt-get install ffmpeg -y -qq
+      printf "\\e[32mFFmpeg has been installed!\\e[0m\\n"
+      exit 0
+      ;;
+  "2")
+      printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
+      apt-get install build-essential curl g++ -y -qq
+      curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
+      rm -r "$HOME/ffmpeg-build"
+      printf "\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
+      exit 0
+      ;;
+  "0")
+      printf "\\n\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+      exit 0
+      ;;
+  *)
+      printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\e[0m\\n"
+      ;;
+  esac
+done
+;;
