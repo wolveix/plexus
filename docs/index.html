@@ -41,7 +41,7 @@
                        <section id="about-section" class="doc-section">
                           <h2 class="section-title">About</h2>
                           <div class="section-block">
-                             <p>Plexus is a suite of easy-to-use tools to help manage your media collection. You can build a list of media within your collection which is incorrectly encoded, and then re-encode all of that media automatically. Plexus also integrates smoothly with RClone.</p><br><p>I created this suite because I knew that I would need a simple CLI solution to re-encoding all of my media at some point in the future, and no other solution met my requirements.</p><br><p>Thank you to <a href="https://github.com/masonr" target="_blank">Mason Rowe</a> for the advice and starting scripts.</p><br><p><strong><a href="https://github.com/Wolveix" target="_blank">Robert Thomas</a> - <a href="https://robt.me" target="_blank">Managing Director & Lead Software Developer</a> at <a href="https://arcruy.com" target="_blank">Arcruy</a></strong></p>
+                             <p>Plexus is a suite of easy-to-use tools to help manage your media collection. You can build a list of media within your collection which is incorrectly encoded, and then re-encode all of that media automatically. Plexus also integrates smoothly with RClone.</p><br><p>I created this suite because I knew that I would need a simple CLI solution to re-encoding all of my media at some point in the future, and no other solution met my requirements.</p><br><p>Thank you <a href="https://github.com/masonr" target="_blank">Mason Rowe</a> for your advice along the way.</p><br><p><strong><a href="https://github.com/Wolveix" target="_blank">Robert Thomas</a> - <a href="https://robt.me" target="_blank">Managing Director & Lead Software Developer</a> at <a href="https://arcruy.com" target="_blank">Arcruy</a></strong></p>
                           </div>
                        </section>
                         <section id="installation-section" class="doc-section">
@@ -57,7 +57,7 @@
                               <br>
                               <p>Install any missing dependencies and create all of the temporary folders required:</p>
                               <p><code>sudo apt-get install curl ffmpeg unzip -y</code></p>
-                              <p><code>mkdir -p /mnt/plexus /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone $HOME/.config/plexus</code></p>
+                              <p><code>mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus</code></p>
                               <br>
                               <p>Download the default config file and move it into the correct location:</p>
                               <p><code>curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf</code></p>
@@ -72,8 +72,7 @@
                               <p><code>sudo mv plexus /usr/bin/plexus</code></p>
                               <br>
                               <h3>That's it!</h3>
-                              <p>The automated script checks for an RClone installation too as Plexus natively supports it. To install RClone:</p>
-                              <p><code>curl https://rclone.org/install.sh | sudo bash</code></p>
+                              <p>Plexus natively supports RClone and a custom build of FFmpeg. You can install any dependencies via Plexus' built-in install function.</p>
                            </div>
                         </section>
                      </div>

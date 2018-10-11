@@ -5,31 +5,31 @@ A suite of tools to help manage the media behind a Plex server.
 
 ### Automatic
 You can automatically install Plexus by running the following line via a supported command line interface:
-``` bash
+``` shell
 curl https://plexus.robt.me/install.sh | sudo bash
 ```
 
 ### Manual
 Alternatively, you can manually install Plexus to a custom location on your device.
 Install any missing dependencies and create all of the temporary folders required:
-``` bash
+``` shell
 sudo apt-get install curl ffmpeg unzip -y
-mkdir -p /mnt/plexus /tmp/plexus/encode/convert /tmp/plexus/encode/converted /tmp/plexus/rclone $HOME/.config/plexus
+mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 ```
 
 Download the default config file and move it into the correct location:
-``` bash
+``` shell
 curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf
 mv plexus.conf "$HOME"/.config/plexus/
 ```
 
 Next, download the executable itself:
-``` bash
+``` shell
 curl -O https://plexus.robt.me/versions/releases/latest/plexus
 ```
 
 Finally, correct the file permissions and move it into your respective operating system's application directory. The following example is for Linux:
-``` bash
+``` shell
 chmod u+x plexus && chmod 755 plexus
 sudo chown root:root plexus
 sudo mv plexus /usr/bin/plexus
@@ -37,12 +37,9 @@ sudo mv plexus /usr/bin/plexus
 
 #### That's it!
 
-The automated script checks for an RClone installation too as Plexus natively supports it. To install RClone:
-``` bash
-curl https://rclone.org/install.sh | sudo bash
-```
+Plexus natively supports RClone and a custom build of FFmpeg. You can install any dependencies via Plexus' built-in install function.
 
 ## Credits
 - Creator: Robert Thomas ([Wolveix](https://github.com/Wolveix))
-- Original Scripts: Mason Rowe ([MasonR](https://github.com/MasonR))
+- Help: Mason Rowe ([MasonR](https://github.com/MasonR))
 - License: [GNU General Public License v3.0](https://github.com/Wolveix/Plexus/blob/master/LICENSE)
