@@ -509,7 +509,7 @@ function func_install {
               case $answer in
               "1")
                   printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
-                  apt-get install curl ffmpeg fuse unzip -y -qq
+                  sudo apt-get install curl ffmpeg fuse unzip -y -qq
                   case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash -s beta) in
                     0)
                       printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
@@ -542,13 +542,13 @@ function func_install {
                     case $answer in
                     "1")
                         printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
-                        apt-get install ffmpeg -y -qq
+                        sudo apt-get install ffmpeg -y -qq
                         printf "\\e[32mFFmpeg has been installed!\\e[0m\\n"
                         exit 0
                         ;;
                     "2")
                         printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-                        apt-get install build-essential curl g++ -y -qq
+                        sudo apt-get install build-essential curl g++ -y -qq
                         curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
                         rm -r "$HOME/ffmpeg-build"
                         printf "\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
@@ -566,13 +566,13 @@ function func_install {
                   ;;
               "3")
                   printf "\\n\\e[36mInstalling Fuse.\\n\\n\\e[0m"
-                  apt-get install fuse -y -qq
+                  sudo apt-get install fuse -y -qq
                   printf "\\e[32mFuse has been installed!\\e[0m\\n"
                   exit 0
                   ;;
               "4")
                   printf "\\n\\e[36mInstalling RClone.\\n\\n\\e[0m"
-                  apt-get install curl unzip -y -qq
+                  sudo apt-get install curl unzip -y -qq
                   case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash -s beta) in
                     0)
                       printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
