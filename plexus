@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.8 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.8.9 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -417,8 +417,21 @@ function func_encode {
         then
           if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
           then
-            printf "$ffmpeg_error"
-            exit 0
+            printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
+            if [ "$video_codec" == "h264" ]
+            then
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              then
+                printf "$ffmpeg_error"
+                exit 0
+              fi
+            else
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              then
+                printf "$ffmpeg_error"
+                exit 0
+              fi
+            fi
           fi
         else
           /bin/rm "$convert_dir/$FILE"
