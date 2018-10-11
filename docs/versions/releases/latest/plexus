@@ -563,8 +563,11 @@ function func_install {
                         printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
                         sudo apt-get install build-essential curl g++ -y -qq
                         curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
-                        rm -r "$HOME/ffmpeg-build"
-                        printf "\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
+                        printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
+                        sudo /bin/mv -f "$HOME/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
+                        printf "\\nRemoving FFmpeg build files.\\n"
+                        sudo /bin/rm -r "$HOME/ffmpeg-build"
+                        printf "\\n\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
                         exit 0
                         ;;
                     "0")
