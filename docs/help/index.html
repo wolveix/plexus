@@ -41,8 +41,14 @@
                         <section id="general" class="doc-section">
                            <h2 class="section-title">General</h2>
                            <div class="section-block">
-                              <h3 class="question"><i class="fa fa-question-circle"></i> What if the install fails?</h3>
-                              <div class="answer">The app is currently unstable and in active development. Please wait for a stable release.</div>
+                              <h3 class="question"><i class="fa fa-question-circle"></i> I don't have FFmpeg installed. How can I install it?</h3>
+                              <div class="answer">The recommended way to install any of Plexus' dependencies is to use the built-in install function. From there, you can either install the precompiled version of FFmpeg from your OS' repositories, or you can install a custom build with extended codec support.</div>
+
+                              <h3 class="question"><i class="fa fa-question-circle"></i> I'm getting "An unknown error occurred with FFmpeg.", what should I do?</h3>
+                              <div class="answer">Run the encode command again while ensuring that the --verbose flag is set. Once the error occurs again, copy & paste FFmpeg's output into a new GitHub issue for the <a href="https://github.com/Wolveix/Plexus">Plexus repository</a>.</div>
+
+                              <h3 class="question"><i class="fa fa-question-circle"></i> What does Plexus do?</h3>
+                              <div class="answer">A lot of things. But it's original intended purpose was to create a sublist of media from your media collection which doesn't meet your desired video and audio codec specifications (by default, these are h264 for video and aac for audio as they're the most universally played codecs), and then process said list to re-encode the media.<br>By running the list command while using the -d flag to point to your overall media directory, Plexus will build a list file containing absolute paths to the media in question. Once the list file is complete, you're then able to feed the list into the encode command which will then re-encode all of the media that needs to be re-encoded. You can specify your default codecs from your config file ($HOME/.config/plexus/plexus.conf), or you can specify the codecs wanted for a specific runtime session by using the -a and -v flags respectively.</div>
                            </div>
                         </section>
                      </div>

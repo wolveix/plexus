@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.8.9 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.0 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -341,6 +341,19 @@ function func_config {
 }
 
 function func_encode {
+  if [ "$verbose" == "true" ]
+  then
+    ffmpeg_verbose=""
+  else
+    ffmpeg_verbose="-loglevel quiet"
+  fi
+
+  if [ ! -e "$list_file" ]
+  then
+    printf "List file does not exist.\\nPlease manually specify a list file or run the list command to create one.\\n"
+    exit 0
+  fi
+
   while read line; do
     if [ -n "$line" ]
     then
@@ -415,18 +428,18 @@ function func_encode {
       then
         if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
           then
             printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
             if [ "$video_codec" == "h264" ]
             then
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
               then
                 printf "$ffmpeg_error"
                 exit 0
               fi
             else
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
               then
                 printf "$ffmpeg_error"
                 exit 0
@@ -441,13 +454,13 @@ function func_encode {
         then
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a copy -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a copy -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
@@ -456,13 +469,13 @@ function func_encode {
         else
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -movflags faststart -threads 2 -nostdin -loglevel quiet -stats "$converted_dir/$NAME.mkv"
+            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
@@ -737,7 +750,7 @@ case "$command" in
     func_config
     ;;
   encode)
-    while getopts ":a:l:p:r:v:" opt; do
+    while getopts ":a:l:p:r:v-:" opt; do
       case $opt in
         a)
           check_variable audio ${OPTARG,,}
@@ -787,6 +800,13 @@ case "$command" in
             exit 0
           fi
           ;;
+        -)
+          case ${OPTARG} in
+            "verbose"*)
+              verbose="true"
+              ;;
+          esac
+          ;;
         \?)
           echo "Invalid option: -$OPTARG." >&2
           exit 1
@@ -799,7 +819,7 @@ case "$command" in
     done
     if [ $OPTIND -eq 1 ]
     then
-      printf "\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n"
+      printf "\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --verbose       Show detailed log\\n"
       exit 0
     fi
     if [ ! -z "$list_file" ]
