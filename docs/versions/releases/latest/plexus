@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.0 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.1 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -118,7 +118,7 @@ function func_about {
 }
 
 function func_config {
-    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set audio codec\\n2. Set convert directory\\n3. Set converted directory\\n4. Set ffmpeg preset\\n5. Set list file location\\n6. Set media directory\\n7. Set video codec\\n8. Set RClone remote\\n9. Set RClone cache\\n0. Exit\\n\\n"
+    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set audio codec\\n2. Set directories\\n3. Set ffmpeg preset\\n4. Set list file location\\n5. Set video codec\\n6. Set RClone remote\\n7. Set RClone cache\\n0. Exit\\n\\n"
     answer="waiting"
     while [ ! -z $answer ]
     do
@@ -146,60 +146,132 @@ function func_config {
             done
             ;;
         "2")
-            printf "\\n\\nEnter the desired convert directory: "
+            printf "\\n\\nEnter the desired directory:\\n1. Convert directory\\n2. Converted directory\\n3. Media directory\\n4. Mount directory\\n0. Exit\\n\\n"
             answer="waiting"
             while [ ! -z $answer ]
             do
-                read -r -p '' answer
+                read -r -n 1 -p '' answer
+                case $answer in
+                "1")
+                    printf "\\n\\nEnter the desired convert directory: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
 
-                if [ -d "$answer" ]
-                then
-                    if [ "${answer: -1}" == "/" ]
-                    then
-                        # write the following line to config file
-                        convert_dir="${answer::-1}"
-                        sed -i '/convert_dir/d' "$HOME"/.config/plexus/plexus.conf
-                        echo convert_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
-                    else
-                        convert_dir="$answer"
-                        sed -i '/convert_dir/d' "$HOME"/.config/plexus/plexus.conf
-                        echo convert_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
-                    fi
-                    printf "\\nConvert directory successfully changed.\\n"
-                    exit 0
-                else
-                    printf "\\nYou have not entered a valid directory.\\n"
-                fi
+                        if [ -d "$answer" ]
+                        then
+                            if [ "${answer: -1}" == "/" ]
+                            then
+                                # write the following line to config file
+                                convert_dir="${answer::-1}"
+                                sed -i '/convert_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo convert_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            else
+                                convert_dir="$answer"
+                                sed -i '/convert_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo convert_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            fi
+                            printf "\\nConvert directory successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "\\nYou have not entered a valid directory.\\n"
+                        fi
+                    done
+                    ;;
+                "2")
+                    printf "\\n\\nEnter the desired converted directory: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
+
+                        if [ -d "$answer" ]
+                        then
+                            if [ "${answer: -1}" == "/" ]
+                            then
+                                # write the following line to config file
+                                converted_dir="${answer::-1}"
+                                sed -i '/converted_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo converted_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            else
+                                converted_dir="$answer"
+                                sed -i '/converted_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo converted_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            fi
+                            printf "\\nConverted directory successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "You have not entered a valid directory.\\n"
+                        fi
+                    done
+                    ;;
+                "3")
+                    printf "\\n\\nEnter the desired media directory: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
+
+                        if [ -d "$answer" ]
+                        then
+                            if [ "${answer: -1}" == "/" ]
+                            then
+                                # write the following line to config file
+                                media_dir="${answer::-1}"
+                                sed -i '/media_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo media_dir=\"$media_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            else
+                                media_dir="$answer"
+                                sed -i '/media_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo media_dir=\"$media_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            fi
+                            printf "\\nMedia directory successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "You have not entered a valid directory.\\n"
+                        fi
+                    done
+                    ;;
+                "4")
+                    printf "\\n\\nEnter the desired mount directory: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
+
+                        if [ -d "$answer" ]
+                        then
+                            if [ "${answer: -1}" == "/" ]
+                            then
+                                # write the following line to config file
+                                mount_dir="${answer::-1}"
+                                sed -i '/mount_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo mount_dir=\"$mount_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            else
+                                mount_dir="$answer"
+                                sed -i '/mount_dir/d' "$HOME"/.config/plexus/plexus.conf
+                                echo mount_dir=\"$mount_dir\" >> "$HOME"/.config/plexus/plexus.conf
+                            fi
+                            printf "\\nMount directory successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "You have not entered a valid directory.\\n"
+                        fi
+                    done
+                    ;;
+                "0")
+                    printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                    exit 4
+                    ;;
+                *)
+                    answer="invalid"
+                    printf "\\nPlease enter a valid menu option. Enter 0 to exit.\\n"
+                    ;;
+                esac
             done
             ;;
         "3")
-            printf "\\n\\nEnter the desired converted directory: "
-            answer="waiting"
-            while [ ! -z $answer ]
-            do
-                read -r -p '' answer
-
-                if [ -d "$answer" ]
-                then
-                    if [ "${answer: -1}" == "/" ]
-                    then
-                        # write the following line to config file
-                        converted_dir="${answer::-1}"
-                        sed -i '/converted_dir/d' "$HOME"/.config/plexus/plexus.conf
-                        echo converted_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
-                    else
-                        converted_dir="$answer"
-                        sed -i '/converted_dir/d' "$HOME"/.config/plexus/plexus.conf
-                        echo converted_dir=\"$convert_dir\" >> "$HOME"/.config/plexus/plexus.conf
-                    fi
-                    printf "\\nConverted directory successfully changed.\\n"
-                    exit 0
-                else
-                    printf "You have not entered a valid directory.\\n"
-                fi
-            done
-            ;;
-        "4")
             printf "\\n\\nEnter the desired ffmpeg preset: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -220,7 +292,7 @@ function func_config {
                 exit 0
             done
             ;;
-        "5")
+        "4")
             printf "\\n\\nEnter the desired list file: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -239,34 +311,7 @@ function func_config {
                 fi
             done
             ;;
-        "6")
-            printf "\\n\\nEnter the desired media directory: "
-            answer="waiting"
-            while [ ! -z $answer ]
-            do
-                read -r -p '' answer
-
-                if [ -d "$answer" ]
-                then
-                    if [ "${answer: -1}" == "/" ]
-                    then
-                        # write the following line to config file
-                        media_dir="${answer::-1}"
-                        sed -i '/media_dir/d' "$HOME"/.config/plexus/plexus.conf
-                        echo media_dir=\"$media_dir\" >> "$HOME"/.config/plexus/plexus.conf
-                    else
-                        media_dir="$answer"
-                        sed -i '/media_dir/d' "$HOME"/.config/plexus/plexus.conf
-                        echo media_dir=\"$media_dir\" >> "$HOME"/.config/plexus/plexus.conf
-                    fi
-                    printf "\\nMedia directory successfully changed.\\n"
-                    exit 0
-                else
-                    printf "You have not entered a valid directory.\\n"
-                fi
-            done
-            ;;
-        "7")
+        "5")
             printf "\\n\\nEnter the desired video codec: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -288,7 +333,7 @@ function func_config {
                 exit 0
             done
             ;;
-        "8")
+        "6")
             printf "\\n\\nEnter the desired RClone remote: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -309,7 +354,7 @@ function func_config {
                 exit 0
             done
             ;;
-        "9")
+        "7")
             printf "\\n\\nEnter the desired RClone cache: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -334,6 +379,7 @@ function func_config {
             exit 4
             ;;
         *)
+            answer="invalid"
             printf "\\nPlease enter a valid menu option. Enter 0 to exit.\\n"
             ;;
         esac
@@ -588,6 +634,7 @@ function func_install {
                         exit 0
                         ;;
                     *)
+                        answer="invalid"
                         printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\e[0m\\n"
                         ;;
                     esac
@@ -627,6 +674,7 @@ function func_install {
                   exit 0
                   ;;
               *)
+                  answer="invalid"
                   printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\e[0m\\n"
                   ;;
               esac
@@ -642,6 +690,7 @@ function func_install {
             exit 0
             ;;
         *)
+            answer="invalid"
             printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\n"
             ;;
         esac
@@ -649,7 +698,7 @@ function func_install {
 }
 
 function func_list {
-  printf "\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nVideo codec: $video_codec\\n\\n"
+  printf "\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nMount Path: $mount_path\\nVideo codec: $video_codec\\n\\n"
 
   if [ -f $list_file ]
   then
@@ -669,6 +718,7 @@ function func_list {
               exit 4
               ;;
           *)
+              answer="invalid"
               printf "\\nPlease enter yes or no.\\n"
               ;;
           esac
@@ -681,12 +731,13 @@ function func_list {
     DIRP=${line%/*}
     FILE=${line##*/}
     NAME=${FILE%.*}
-      printf "\\e[94mScanning: $line\\n"
+    printf "\\e[94mScanning: $line\\n"
   	file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
   	file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
 
   	if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
   	then
+      line=${line#"$mount_dir"}
   		echo "$line" >> $list_file
   	fi
   done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
@@ -844,7 +895,7 @@ case "$command" in
     shift $((OPTIND -1))
     ;;
   list)
-    while getopts ":a:d:l:v:" opt; do
+    while getopts ":a:d:l:m:v:" opt; do
       case $opt in
         a)
           check_variable audio ${OPTARG,,}
@@ -878,6 +929,15 @@ case "$command" in
               exit 1
           fi
           ;;
+        m)
+          mount_dir="$OPTARG"
+
+          if [ ! -d "$mount_dir" ]
+          then
+              printf "You have not entered a valid mount directory.\\n"
+              exit 1
+          fi
+          ;;
         v)
           check_variable video ${OPTARG,,}
           if [ $video_codec = "null" ]
@@ -898,7 +958,7 @@ case "$command" in
     done
     if [ $OPTIND -eq 1 ]
     then
-      printf "\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -v              Video codec. Default = $video_codec\\n"
+      printf "\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for RClone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
       exit 0
     fi
     func_list
