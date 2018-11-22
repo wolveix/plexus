@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.3 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.31 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
   source "$HOME"/.config/plexus/plexus.conf
-  if [ -z "$audio_codec" ] || [ -z "$convert_dir" ] || [ -z "$converted_dir" ] || [ -z "$ffmpeg_binary" ] || [ -z "$ffmpeg_threads" ] || [ -z "$ffmpeg_preset" ] || [ -z "$ffprobe_binary" ] || [ -z "$force_overwrite" ] || [ -z "$list_file" ] || [ -z "$media_dir" ] || [ -z "$video_codec" ] || [ -z "$video_library" ]
+  if [ -z "$audio_codec" ] || [ -z "$convert_dir" ] || [ -z "$converted_dir" ] || [ -z "$ffmpeg_binary" ] || [ -z "$ffmpeg_threads" ] || [ -z "$ffmpeg_preset" ] || [ -z "$ffprobe_binary" ] || [ -z "$force_overwrite" ] || [ -z "$list_file" ] || [ -z "$media_container" ] || [ -z "$media_dir" ] || [ -z "$video_codec" ] || [ -z "$video_library" ]
   then
     printf "Your config file ($HOME/.config/plexus/plexus.conf) is missing required parameters.\\nMove or delete it and then run Plexus again.\\n"
     exit 0
@@ -78,6 +78,25 @@ function check_variable {
             ;;
       esac
       ;;
+    "container")
+      case $2 in
+        "avi")
+          media_container="avi"
+          ;;
+        "mkv")
+          media_container="mkv"
+          ;;
+        "mp4")
+          media_container="mp4"
+          ;;
+        "wmv")
+          media_container="wmv"
+          ;;
+        *)
+          media_container="null"
+          ;;
+      esac
+      ;;
     "ffmpeg_preset")
       case $2 in
         "ultrafast" | "superfast" | "faster" | "fast" | "medium" | "slow" | "slower" | "veryslow" | "placebo")
@@ -123,7 +142,7 @@ function func_about {
 }
 
 function func_config {
-    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set binaries (FFmpeg, FFprobe, RClone)\\n2. Set codecs (audio, video)\\n3. Set directories (convert, converted, media, mount)\\n4. Set FFmpeg options (CPU threads, force overwrite, preset)\\n5. Set list file location\\n6. Set RClone options (cache, remote)\\n0. Exit\\n\\n"
+    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set binaries (FFmpeg, FFprobe, RClone)\\n2. Set codecs (audio, container, video)\\n3. Set directories (convert, converted, media, mount)\\n4. Set FFmpeg options (CPU threads, force overwrite, preset)\\n5. Set list file location\\n6. Set RClone options (cache, remote)\\n0. Exit\\n\\n"
     answer="waiting"
     while [ ! -z $answer ]
     do
@@ -199,7 +218,7 @@ function func_config {
             done
             ;;
         "2")
-            printf "\\n\\nEnter the desired codec:\\n1. Audio\\n2. Video\\n0. Exit\\n\\n"
+            printf "\\n\\nEnter the desired codec:\\n1. Audio\\n2. Container\\n3. Video\\n0. Exit\\n\\n"
             answer="waiting"
             while [ ! -z $answer ]
             do
@@ -227,6 +246,28 @@ function func_config {
                     done
                     ;;
                 "2")
+                    printf "\\n\\nEnter the desired media container: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        media_container="null"
+                        read -r -p '' answer
+                        while [ $media_container = "null" ]
+                        do
+                            printf "\\nYou have not entered a supported container.\\n"
+                            read -r -p '' answer
+                            check_variable container "$answer"
+                        done
+                        sed -i '/media_container/d' "$HOME"/.config/plexus/plexus.conf
+                        echo media_container=\"$media_container\" >> "$HOME"/.config/plexus/plexus.conf
+                        sed -i '/media_container/d' "$HOME"/.config/plexus/plexus.conf
+                        echo media_container=\"$media_container\" >> "$HOME"/.config/plexus/plexus.conf
+
+                        printf "\\nMedia container successfully changed.\\n"
+                        exit 0
+                    done
+                    ;;
+                "3")
                     printf "\\n\\nEnter the desired video codec: "
                     answer="waiting"
                     while [ ! -z $answer ]
@@ -557,12 +598,15 @@ function func_encode {
     ffmpeg_verbose="-loglevel quiet"
   fi
 
-  if ! [[ "$rclone_bwlimit" =~ ^[0-9]+$ ]]
+  if [ ! -z "$rclone_bwlimit" ]
   then
-    printf "You have not entered a valid number for --bwlimit (do not include KB).\\n"
-    exit 0
-  else
-    rclone_bwlimit="--bwlimit $rclone_bwlimit"
+    if ! [[ "$rclone_bwlimit" =~ ^[0-9]+$ ]]
+    then
+      printf "You have not entered a valid number for --bwlimit (do not include KB).\\n"
+      exit 0
+    else
+      rclone_bwlimit="--bwlimit $rclone_bwlimit"
+    fi
   fi
 
   if [ ! -e "$list_file" ]
@@ -675,12 +719,12 @@ function func_encode {
         options="-crf 20 -level 4.1 $options"
       fi
 
-      if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+      if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
       then
         if [ "$codec_copy" = true ]
         then
           printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
-          if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+          if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
           then
             printf "$ffmpeg_error"
             exit 0
@@ -702,12 +746,12 @@ function func_encode {
             $rclone_binary delete "$rclone_remote$line" $rclone_bwlimit --stats-log-level NOTICE --stats 30s
             printf "\\nOriginal file deleted."
           else
-            mv "$converted_dir/$NAME.mkv" "$converted_dir/$NAME [Plexus Encode].mkv"
+            mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
             NAME="$NAME [Plexus Encode]"
-            printf "\\nForce overwrite is disabled, new filename = $NAME.mkv"
+            printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
           fi
           printf "\\nUploading converted file to RClone remote.\\n"
-          $rclone_binary move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" $rclone_bwlimit --stats-log-level NOTICE --stats 30s
+          $rclone_binary move "$converted_dir/$NAME.$media_container" "$rclone_remote$DIRP" $rclone_bwlimit --stats-log-level NOTICE --stats 30s
           printf "\\nFile successfully uploaded."
         else
           if [ "$force_overwrite" = true ]
@@ -716,12 +760,12 @@ function func_encode {
             /bin/rm "$line"
             printf "\\nOriginal file deleted."
           else
-            mv "$converted_dir/$NAME.mkv" "$converted_dir/$NAME [Plexus Encode].mkv"
+            mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
             NAME="$NAME [Plexus Encode]"
-            printf "\\nForce overwrite is disabled, new filename = $NAME.mkv"
+            printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
           fi
           printf "\\nMoving converted file to the correct location.\\n"
-          /bin/mv "$converted_dir/$NAME.mkv" "$line"
+          /bin/mv "$converted_dir/$NAME.$media_container" "$line"
           printf "\\nFile successfully moved."
         fi
         printf "\\nDeleting cached file and delisting it.\\n"
@@ -930,7 +974,7 @@ function func_list {
       line=${line#"$mount_dir"}
       echo "$line" >> $list_file
   	fi
-  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
+  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.$media_container' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
 }
 
