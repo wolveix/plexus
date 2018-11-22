@@ -554,7 +554,7 @@ function func_encode {
           audio_codec="libfdk_aac"
           ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\n"
         else
-          ffmpeg_error"\\nAn unknown error occurred with FFmpeg.\\nConsider installing the custom build of FFmpeg via the install command.\\n"
+          ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\nConsider installing the custom build of FFmpeg via the install command.\\n"
         fi
       fi
 
