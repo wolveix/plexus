@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.1 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.2 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -118,7 +118,7 @@ function func_about {
 }
 
 function func_config {
-    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set audio codec\\n2. Set directories\\n3. Set ffmpeg preset\\n4. Set list file location\\n5. Set video codec\\n6. Set RClone remote\\n7. Set RClone cache\\n0. Exit\\n\\n"
+    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set audio codec\\n2. Set binaries\\n3. Set directories\\n4. Set ffmpeg preset\\n5. Set list file location\\n6. Set video codec\\n7. Set RClone remote\\n8. Set RClone cache\\n0. Exit\\n\\n"
     answer="waiting"
     while [ ! -z $answer ]
     do
@@ -146,6 +146,81 @@ function func_config {
             done
             ;;
         "2")
+            printf "\\n\\nEnter the desired binary:\\n1. FFmpeg\\n2. FFprobe\\n3. RClone\\n0. Exit\\n\\n"
+            answer="waiting"
+            while [ ! -z $answer ]
+            do
+                read -r -n 1 -p '' answer
+                case $answer in
+                "1")
+                    printf "\\n\\nEnter the desired FFmpeg binary: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
+
+                        if [ -f "$answer" ]
+                        then
+                            ffmpeg_binary="$answer"
+                            sed -i '/ffmpeg_binary/d' "$HOME"/.config/plexus/plexus.conf
+                            echo ffmpeg_binary=\"$ffmpeg_binary\" >> "$HOME"/.config/plexus/plexus.conf
+                            printf "\\nFFmpeg binary successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "\\nYou have not entered a valid file.\\n"
+                        fi
+                    done
+                    ;;
+                "2")
+                    printf "\\n\\nEnter the desired FFprobe binary: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
+
+                        if [ -f "$answer" ]
+                        then
+                            ffprobe_binary="$answer"
+                            sed -i '/ffprobe_binary/d' "$HOME"/.config/plexus/plexus.conf
+                            echo ffprobe_binary=\"$ffprobe_binary\" >> "$HOME"/.config/plexus/plexus.conf
+                            printf "\\nFFprobe binary successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "\\nYou have not entered a valid file.\\n"
+                        fi
+                    done
+                    ;;
+                "3")
+                    printf "\\n\\nEnter the desired RClone binary: "
+                    answer="waiting"
+                    while [ ! -z $answer ]
+                    do
+                        read -r -p '' answer
+
+                        if [ -f "$answer" ]
+                        then
+                            rclone_binary="$answer"
+                            sed -i '/rclone_binary/d' "$HOME"/.config/plexus/plexus.conf
+                            echo rclone_binary=\"$rclone_binary\" >> "$HOME"/.config/plexus/plexus.conf
+                            printf "\\nRClone binary successfully changed.\\n"
+                            exit 0
+                        else
+                            printf "\\nYou have not entered a valid file.\\n"
+                        fi
+                    done
+                    ;;
+                "0")
+                    printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                    exit 4
+                    ;;
+                *)
+                    answer="invalid"
+                    printf "\\nPlease enter a valid menu option. Enter 0 to exit.\\n"
+                    ;;
+                esac
+            done
+            ;;
+        "3")
             printf "\\n\\nEnter the desired directory:\\n1. Convert directory\\n2. Converted directory\\n3. Media directory\\n4. Mount directory\\n0. Exit\\n\\n"
             answer="waiting"
             while [ ! -z $answer ]
@@ -202,6 +277,7 @@ function func_config {
                             printf "\\nConverted directory successfully changed.\\n"
                             exit 0
                         else
+                            answer="invalid"
                             printf "You have not entered a valid directory.\\n"
                         fi
                     done
@@ -229,6 +305,7 @@ function func_config {
                             printf "\\nMedia directory successfully changed.\\n"
                             exit 0
                         else
+                            answer="invalid"
                             printf "You have not entered a valid directory.\\n"
                         fi
                     done
@@ -256,6 +333,7 @@ function func_config {
                             printf "\\nMount directory successfully changed.\\n"
                             exit 0
                         else
+                            answer="invalid"
                             printf "You have not entered a valid directory.\\n"
                         fi
                     done
@@ -271,7 +349,7 @@ function func_config {
                 esac
             done
             ;;
-        "3")
+        "4")
             printf "\\n\\nEnter the desired ffmpeg preset: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -292,7 +370,7 @@ function func_config {
                 exit 0
             done
             ;;
-        "4")
+        "5")
             printf "\\n\\nEnter the desired list file: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -311,7 +389,7 @@ function func_config {
                 fi
             done
             ;;
-        "5")
+        "6")
             printf "\\n\\nEnter the desired video codec: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -333,7 +411,7 @@ function func_config {
                 exit 0
             done
             ;;
-        "6")
+        "7")
             printf "\\n\\nEnter the desired RClone remote: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -354,7 +432,7 @@ function func_config {
                 exit 0
             done
             ;;
-        "7")
+        "8")
             printf "\\n\\nEnter the desired RClone cache: "
             answer="waiting"
             while [ ! -z $answer ]
@@ -406,29 +484,39 @@ function func_encode {
       DIRP=${line%/*}
       FILE=${line##*/}
       NAME=${FILE%.*}
-      if [ ! -z "$rclone_remote" ]
+      if [ "$remote_transfer" = true ]
       then
-        if [ "$dependency_rclone" = true ]
+        if [ ! -z "$rclone_remote" ]
         then
-          printf "Downloading: $FILE\\n"
-          /usr/bin/rclone copy "$rclone_remote$line" "$convert_dir" --stats-log-level NOTICE --stats 30s
-          printf "\\nFile downloaded."
-        else
-          printf "\\e[31mPlease install RClone to use an RClone remote with this command\\e[0m\\n"
-          exit 0
+          if [ "$dependency_rclone" = true ]
+          then
+            printf "Downloading: $FILE\\n"
+            $rclone_binary copy "$rclone_remote$line" "$convert_dir" --stats-log-level NOTICE --stats 30s
+            printf "\\nFile downloaded."
+          else
+            printf "\\e[31mPlease install RClone to use an RClone remote with this command\\e[0m\\n"
+            exit 0
+          fi
         fi
       else
-        printf "Copying: $FILE"
-        /bin/cp "$line" "$convert_dir"
-        printf "\\nFile copied."
+        if [ -f "$line" ]
+        then
+          printf "Copying: $FILE\\n"
+          /bin/cp "$line" "$convert_dir"
+          printf "\\nFile copied."
+        else
+          printf "Error: $line does not exist.\\n"
+          exit 0
+        fi
       fi
+
       exclude_stream=""
-      file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-      file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
-      stream_count=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
+      file_audio_codec=$($ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
+      file_video_codec=$($ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE")
+      stream_count=$($ffprobe_binary -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
       if [ "$stream_count" -gt 0 ]
       then
-        stream_id=$(/usr/bin/ffprobe -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
+        stream_id=$($ffprobe_binary -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
         if [ "$stream_count" = 1 ]
         then
           exclude_stream=$(echo "$stream_id" | grep -oP '0:[0-9]{1,3}')
@@ -461,7 +549,7 @@ function func_encode {
 
       if [ "$audio_codec" = "aac" ]
       then
-        if [ ! -z "$(/usr/bin/ffmpeg -encoders |& grep -i libfdk)" ]
+        if [ ! -z "$($ffmpeg_binary -encoders |& grep -i libfdk)" ]
         then
           audio_codec="libfdk_aac"
           ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\n"
@@ -474,18 +562,18 @@ function func_encode {
       then
         if [ "$file_audio_codec" != "$audio_codec" ]
         then
-          if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+          if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v copy -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
           then
             printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
             if [ "$video_codec" == "h264" ]
             then
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+              if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
               then
                 printf "$ffmpeg_error"
                 exit 0
               fi
             else
-              if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+              if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
               then
                 printf "$ffmpeg_error"
                 exit 0
@@ -500,13 +588,13 @@ function func_encode {
         then
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a copy -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a copy -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a copy -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
@@ -515,13 +603,13 @@ function func_encode {
         else
           if [ "$video_codec" == "h264" ]
           then
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -crf 20 -level 4.1 -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
             fi
           else
-            if ! /usr/bin/ffmpeg -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
+            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -map 0 $exclude_stream -c:v "$video_library" -c:a "$audio_codec" -preset "$ffmpeg_preset" -max_muxing_queue_size 1024 -movflags faststart -threads 2 -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.mkv"
             then
               printf "$ffmpeg_error"
               exit 0
@@ -535,9 +623,9 @@ function func_encode {
         if [ ! -z "$rclone_remote" ] #If variable is not empty
         then
           printf "\\nDeleting original file from RClone remote.\\n"
-          /usr/bin/rclone delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
+          $rclone_binary delete "$rclone_remote$line" --stats-log-level NOTICE --stats 30s
           printf "\\nOriginal file deleted.\\nUploading converted file to RClone remote.\\n"
-          /usr/bin/rclone move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
+          $rclone_binary move "$converted_dir/$NAME.mkv" "$rclone_remote$DIRP" --stats-log-level NOTICE --stats 30s
           printf "\\nFile successfully uploaded."
         else
           printf "\\nDeleting original file.\\n"
@@ -681,7 +769,19 @@ function func_install {
             done
             ;;
         "2")
-            printf "\\n\\nThis won't clear your current config file ($HOME/.config/plexus/plexus.conf).\\n"
+            config_file="$HOME/.config/plexus/plexus.conf.bak"
+            if [ -f "$config_file" ]
+            then
+              i=1
+              while [ -f "$config_file.$i" ]
+              do
+                  let i++
+              done
+              config_file="$config_file.$i"
+            fi
+
+            /bin/mv "$HOME/.config/plexus/plexus.conf" "$config_file"
+            printf "\\n\\nYour current config file has been backed up ($config_file).\\n"
             curl https://plexus.robt.me/install.sh 2>/dev/null | sudo bash
             exit 0
             ;;
@@ -732,13 +832,13 @@ function func_list {
     FILE=${line##*/}
     NAME=${FILE%.*}
     printf "\\e[94mScanning: $line\\n"
-  	file_audio_codec=$(/usr/bin/ffprobe -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
-  	file_video_codec=$(/usr/bin/ffprobe -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
+  	file_audio_codec=$($ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
+  	file_video_codec=$($ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
 
   	if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
   	then
       line=${line#"$mount_dir"}
-  		echo "$line" >> $list_file
+      echo "$line" >> $list_file
   	fi
   done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
@@ -748,7 +848,7 @@ function func_mount {
   if [ -z $rclone_remote ]
   then
     printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
-    /usr/bin/rclone mount $rclone_remote $media_dir --allow-non-empty --allow-other --cache-db-purge --fast-list --poll-interval 10m &
+    $rclone_binary mount $rclone_remote $media_dir --allow-non-empty --allow-other --cache-db-purge --fast-list --poll-interval 10m &
     printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
   else
     printf "\\e[32mPlease specify the RClone remote (option: cache) via the config function\\n\\e[0m"
@@ -829,7 +929,7 @@ case "$command" in
           fi
           ;;
         r)
-          /usr/bin/rclone listremotes > $HOME/.plexus/rclone/remotes.txt
+          $rclone_binary listremotes > $HOME/.plexus/rclone/remotes.txt
           if [ ! -z "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]
           then
             if [ "${OPTARG: -1}" == ":" ]
@@ -838,6 +938,7 @@ case "$command" in
             else
                 rclone_remote="$OPTARG:"
             fi
+            remote_transfer=true
           else
             printf "You have not entered a valid remote.\\n"
             exit 0

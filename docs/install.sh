@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.1 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.2 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ==="
 printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
 apt-get install curl ffmpeg -f -y -qq
 printf "\\n\\e[36mCreating directories if they don't already exist.\\n\\e[94m"
 mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 cd /tmp/plexus || exit
-if [[ -f "$HOME/.config/plexus/plexus.conf" ]]
+if [ ! -f "$HOME/.config/plexus/plexus.conf" ]
 then
   curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf 2>/dev/null
   mv plexus.conf "$HOME"/.config/plexus/
