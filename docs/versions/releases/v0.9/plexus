@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.32 - Developed by Robert Thomas ===\\n"
-HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.33 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -138,11 +137,11 @@ function check_variable {
 }
 
 function func_about {
-    printf "$HEADER_TEXT$HEADER_SUBTEXT\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with RClone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Managing Director & Lead Software Developer at Arcruy.\\n  https://github.com/Wolveix/Plexus\\n"
+    printf "\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with RClone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Managing Director & Lead Software Developer at Arcruy.\\n  https://github.com/Wolveix/Plexus\\n"
 }
 
 function func_config {
-    printf "Use this tool to set the default values without modifying the config file directly.\\n\\n1. Set binaries (FFmpeg, FFprobe, RClone)\\n2. Set codecs (audio, container, video)\\n3. Set directories (convert, converted, media, mount)\\n4. Set FFmpeg options (CPU threads, force overwrite, preset)\\n5. Set list file location\\n6. Set RClone options (cache, remote)\\n0. Exit\\n\\n"
+    printf "\\nUse this tool to set the default values without modifying the config file directly.\\n\\n1. Set binaries (FFmpeg, FFprobe, RClone)\\n2. Set codecs (audio, container, video)\\n3. Set directories (convert, converted, media, mount)\\n4. Set FFmpeg options (CPU threads, force overwrite, preset)\\n5. Set list file location\\n0. Exit\\n\\n"
     answer="waiting"
     while [ ! -z $answer ]
     do
@@ -521,65 +520,6 @@ function func_config {
                 fi
             done
             ;;
-        "6")
-            printf "\\n\\nEnter the desired RClone option:\\n1. Cache\\n2. Remote\\n0. Exit\\n\\n"
-            answer="waiting"
-            while [ ! -z $answer ]
-            do
-                read -r -n 1 -p '' answer
-                case $answer in
-                "1")
-                    printf "\\n\\nEnter the desired RClone cache: "
-                    answer="waiting"
-                    while [ ! -z $answer ]
-                    do
-                        read -r -p '' answer
-                        if [ "${answer: -1}" == ":" ]
-                        then
-                            rclone_cache="$answer"
-                            sed -i '/rclone_remote/d' "$HOME"/.config/plexus/plexus.conf
-                            echo rclone_remote=\"$rclone_cache\" >> "$HOME"/.config/plexus/plexus.conf
-                        else
-                            rclone_cache="$answer:"
-                            sed -i '/rclone_cache/d' "$HOME"/.config/plexus/plexus.conf
-                            echo rclone_cache=\"$rclone_cache\" >> "$HOME"/.config/plexus/plexus.conf
-                        fi
-                        printf "\\nRClone cache successfully changed.\\n"
-                        exit 0
-                    done
-                    ;;
-                "2")
-                    printf "\\n\\nEnter the desired RClone remote: "
-                    answer="waiting"
-                    while [ ! -z $answer ]
-                    do
-                        read -r -p '' answer
-
-                        if [ "${answer: -1}" == ":" ]
-                        then
-                            rclone_remote="$answer"
-                            sed -i '/rclone_remote/d' "$HOME"/.config/plexus/plexus.conf
-                            echo rclone_remote=\"$rclone_remote\" >> "$HOME"/.config/plexus/plexus.conf
-                        else
-                            rclone_remote="$answer:"
-                            sed -i '/rclone_remote/d' "$HOME"/.config/plexus/plexus.conf
-                            echo rclone_remote=\"$rclone_remote\" >> "$HOME"/.config/plexus/plexus.conf
-                        fi
-                        printf "\\nRClone remote successfully changed.\\n"
-                        exit 0
-                    done
-                    ;;
-                "0")
-                    printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
-                    exit 4
-                    ;;
-                *)
-                    answer="invalid"
-                    printf "\\nPlease enter a valid menu option. Enter 0 to exit.\\n"
-                    ;;
-                esac
-            done
-            ;;
         "0")
             printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
             exit 4
@@ -786,7 +726,7 @@ function func_encode {
 }
 
 function func_help {
-    printf "$HEADER_TEXT\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an RClone remote or cache, set from the config function\\n  unmount         Unmount an RClone remote or cache, set from the config function\\n"
+    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an RClone remote or cache, set from the config function\\n  unmount         Unmount an RClone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n"
 }
 
 function func_install {
@@ -934,7 +874,7 @@ function func_install {
 }
 
 function func_list {
-  printf "\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n"
+  printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n"
 
   if [ -f $list_file ]
   then
@@ -943,13 +883,13 @@ function func_list {
       do
           read -r -n 1 -p 'This will delete the current list file. Do you want to continue? ' answer
 
-          case $answer in
-          "Y" | "y")
+          case ${answer,,} in
+          "y")
               rm "$list_file"
               answer=""
               printf "\\n\\n"
               ;;
-          "N" | "n")
+          "n")
               printf "\\nYou can find the current list file here: $list_file\\n"
               exit 4
               ;;
@@ -970,6 +910,8 @@ function func_list {
     printf "\\e[94mScanning: $line\\n"
   	file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
   	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+    printf "\\nAudio: $file_audio_codec\\nVideo: $file_video_codec\\n"
+    exit 0
 
   	if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
   	then
@@ -981,13 +923,12 @@ function func_list {
 }
 
 function func_mount {
-  if [ -z $rclone_remote ]
+  printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
+  if ! $rclone_binary mount $rclone_remote $media_dir --allow-non-empty --allow-other --cache-db-purge --fast-list --poll-interval 10m &
   then
-    printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
-    $rclone_binary mount $rclone_remote $media_dir --allow-non-empty --allow-other --cache-db-purge --fast-list --poll-interval 10m &
-    printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
+    printf "\\nAn uknown error occurred (does the remote exist?)\\n\\e[0m"
   else
-    printf "\\e[32mPlease specify the RClone remote (option: cache) via the config function\\n\\e[0m"
+    printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
   fi
 }
 
@@ -1002,33 +943,16 @@ function func_unmount {
   fi
 }
 
-### COMMAND HANDLER ###
-while getopts ":ah" opt; do
-  case ${opt} in
-    a)
-      func_about
-      exit 0
-      ;;
-    h)
-      func_help
-      exit 0
-      ;;
-   \?)
-     printf "Invalid Option: -$OPTARG\\n"
-     exit 0
-     ;;
-  esac
-done
-shift $((OPTIND -1))
-
 if [ -z "$1" ]
 then
+  printf "$HEADER_TEXT"
   func_help
   exit 0
-else
-  command=$1
-  shift
 fi
+command=$1
+subcommand=$2
+shift
+printf "$HEADER_TEXT"
 case "$command" in
   about)
     func_about
@@ -1114,7 +1038,7 @@ case "$command" in
     done
     if [ $OPTIND -eq 1 ]
     then
-      printf "\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
+      printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt -d /path/to/media/ [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
       exit 0
     fi
     if [ ! -z "$list_file" ]
@@ -1132,7 +1056,17 @@ case "$command" in
     shift $((OPTIND -1))
     ;;
   help)
-    func_help
+    case "${subcommand,,}" in
+      "about")
+        printf "This command tells you more about it's creation.\\n"
+        ;;
+      "encode")
+        printf "\n\\e[39mAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /path/to/list.txt -d /path/to/media/ [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -d              Media directory. Default = $media_dir\\n                  This is the directory that your media is stored\\n                  within\\n\\n  -f              Force overwrite. Default = $force_overwrite\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = $list_file\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              RClone remote. Use this for RClone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured RClone\\n                  remote\\n\\n  -v              Video codec. Default = $video_codec\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit RClone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when expriencing issues\\n"
+        ;;
+      *)
+        func_help
+        ;;
+    esac
     ;;
   install)
     func_install
@@ -1202,7 +1136,7 @@ case "$command" in
     done
     if [ $OPTIND -eq 1 ]
     then
-      printf "\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for RClone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
+      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for RClone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
       exit 0
     fi
     func_list
@@ -1211,6 +1145,31 @@ case "$command" in
   mount)
     if [ $dependency_fuse = true ]
     then
+      while getopts ":r:" opt; do
+        case $opt in
+          r)
+            if [ "${OPTARG: -1}" == ":" ]
+            then
+                rclone_remote="$OPTARG"
+            else
+                rclone_remote="$OPTARG:"
+            fi
+            ;;
+          \?)
+            printf "Invalid option: -$OPTARG.\\n"
+            exit 1
+            ;;
+          :)
+            printf "Option -$OPTARG requires an argument.\\n"
+            exit 1
+            ;;
+        esac
+      done
+      if [ $OPTIND -eq 1 ]
+      then
+        printf "\\e[39mUsage:\\n  plexus mount -r RCloneRemote:\\n\\nFlags:\\n  -r              RClone remote. Setup via rclone config\\n"
+        exit 0
+      fi
       func_mount
       shift $((OPTIND -1))
     else
@@ -1221,6 +1180,26 @@ case "$command" in
   unmount)
     if [ $dependency_fuse = true ]
     then
+      while getopts ":d:" opt; do
+        case $opt in
+          d)
+            media_dir=$OPTARG
+            ;;
+          \?)
+            printf "Invalid option: -$OPTARG.\\n"
+            exit 1
+            ;;
+          :)
+            printf "Option -$OPTARG requires an argument.\\n"
+            exit 1
+            ;;
+        esac
+      done
+      if [ $OPTIND -eq 1 ]
+      then
+        printf "\\e[39mUsage:\\n  plexus unmount -d /path/to/mounted/media/\\n\\nFlags:\\n  -d              Media directory.\\n"
+        exit 0
+      fi
       func_unmount
       shift $((OPTIND -1))
     else
