@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.31 - Developed by Robert Thomas ===\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.32 - Developed by Robert Thomas ===\\n"
 HEADER_SUBTEXT="\\e[93m=== https://github.com/Wolveix/Plexus ===\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
@@ -54,7 +54,7 @@ function main () {
 function check_variable {
   case $1 in
     "audio")
-      case $2 in
+      case ${2,,} in
         "" | "default" | "aac")
             audio_codec="aac"
             ;;
@@ -79,7 +79,7 @@ function check_variable {
       esac
       ;;
     "container")
-      case $2 in
+      case ${2,,} in
         "avi")
           media_container="avi"
           ;;
@@ -98,7 +98,7 @@ function check_variable {
       esac
       ;;
     "ffmpeg_preset")
-      case $2 in
+      case ${2,,} in
         "ultrafast" | "superfast" | "faster" | "fast" | "medium" | "slow" | "slower" | "veryslow" | "placebo")
           ffmpeg_preset="$2"
           ;;
@@ -111,7 +111,7 @@ function check_variable {
       esac
       ;;
     "video")
-      case $2 in
+      case ${2,,} in
         "" | "default" | "x264" | "h.264" | "h264" | "avc" | "libx264")
             video_codec="h264"
             video_library="libx264"
@@ -252,6 +252,7 @@ function func_config {
                     do
                         media_container="null"
                         read -r -p '' answer
+                        check_variable container "$answer"
                         while [ $media_container = "null" ]
                         do
                             printf "\\nYou have not entered a supported container.\\n"
@@ -274,6 +275,7 @@ function func_config {
                     do
                         video_codec="null"
                         read -r -p '' answer
+                        check_variable video "$answer"
                         while [ $video_codec = "null" ]
                         do
                             printf "\\nYou have not entered a supported codec.\\n"
