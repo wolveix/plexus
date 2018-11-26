@@ -923,7 +923,7 @@ function func_list {
     file_audio_codec=""
     file_video_codec=""
 
-  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.$media_container' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
+  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
 }
 
