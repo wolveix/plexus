@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.33 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.34 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -910,8 +910,6 @@ function func_list {
     printf "\\e[94mScanning: $line\\n"
   	file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
   	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
-    printf "\\nAudio: $file_audio_codec\\nVideo: $file_video_codec\\n"
-    exit 0
 
   	if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
   	then
