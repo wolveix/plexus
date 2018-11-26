@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.35 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.36 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -640,20 +640,20 @@ function func_encode {
       codec_copy=false
       codecs=""
       options="-map 0 $exclude_stream -preset $ffmpeg_preset -max_muxing_queue_size 1024 -movflags faststart -threads 2"
-      if [ "$file_video_codec" == "$video_codec" ]
-      then
-        codec_copy=true
-        codecs="-c:v copy"
-      else
-        codecs="-c:v $video_library"
-      fi
-
-      if [ "$file_audio_codec" == "$audio_codec" ]
+      if [ -z "$audio_codec" ] || [ "$file_audio_codec" == "$audio_codec" ]
       then
         codec_copy=true
         codecs="$codecs -c:a copy"
       else
         options="$codecs -c:a $audio_codec"
+      fi
+
+      if [ -z "$video_codec" ] || [ "$file_video_codec" == "$video_codec" ]
+      then
+        codec_copy=true
+        codecs="-c:v copy"
+      else
+        codecs="-c:v $video_library"
       fi
 
       if [ "$video_codec" == "h264" ]
@@ -666,7 +666,12 @@ function func_encode {
         if [ "$codec_copy" = true ]
         then
           printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
-          if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
+          if [ ! -z "$audio_codec" ]
+          then
+            encode_audio_codec="$audio_codec"
+          fi
+
+          if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $encode_audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
           then
             printf "$ffmpeg_error"
             exit 0
@@ -913,12 +918,28 @@ function func_list {
 
     if [ ! -z "$file_audio_codec" ] || [ ! -z "$file_video_codec" ]
     then
-      if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
-    	then
+      if [ -z "$audio_codec" ]
+      then
+        if [[ "$file_video_codec" != "$video_codec" ]]
+        then
+          printf "\\e[34mAdding: $line\\n"
+          line=${line#"$mount_dir"}
+          echo "$line" >> $list_file
+        fi
+      elif [ -z "$video_codec" ]
+      then
+        if [[ "$file_audio_codec" != "$audio_codec" ]]
+        then
+          printf "\\e[34mAdding: $line\\n"
+          line=${line#"$mount_dir"}
+          echo "$line" >> $list_file
+        fi
+      elif [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]
+      then
         printf "\\e[34mAdding: $line\\n"
         line=${line#"$mount_dir"}
         echo "$line" >> $list_file
-    	fi
+      fi
     fi
     file_audio_codec=""
     file_video_codec=""
@@ -969,11 +990,24 @@ case "$command" in
     while getopts ":a:fl:p:r:v:-:" opt; do
       case $opt in
         a)
-          check_variable audio ${OPTARG,,}
-          if [ $audio_codec = "null" ]
+          if [ -z ${OPTARG,,} ]
           then
-            printf "You have not entered a supported audio codec.\\n"
-            exit 0
+            if [ -z "$video_codec" ]
+            then
+              printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+              exit 0
+            else
+              printf "\\n\\e[93mYou've specified no audio codec, enabling video-only mode"
+              encode_audio_codec="$audio_codec"
+              audio_codec=""
+            fi
+          else
+            check_variable audio ${OPTARG,,}
+            if [ $audio_codec = "null" ]
+            then
+              printf "You have not entered a supported audio codec.\\n"
+              exit 0
+            fi
           fi
           ;;
         f)
@@ -1013,11 +1047,23 @@ case "$command" in
           fi
           ;;
         v)
-          check_variable video ${OPTARG,,}
-          if [ $video_codec = "null" ]
+          if [ -z ${OPTARG,,} ]
           then
-            printf "You have not entered a supported video codec.\\n"
-            exit 0
+            if [ -z "$audio_codec" ]
+            then
+              printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+              exit 0
+            else
+              printf "\\n\\e[93mYou've specified no video codec, enabling audio-only mode"
+              video_codec=""
+            fi
+          else
+            check_variable video ${OPTARG,,}
+            if [ $video_codec = "null" ]
+            then
+              printf "You have not entered a supported video codec.\\n"
+              exit 0
+            fi
           fi
           ;;
         -)
@@ -1081,11 +1127,23 @@ case "$command" in
     while getopts ":a:d:l:m:v:" opt; do
       case $opt in
         a)
-          check_variable audio ${OPTARG,,}
-          if [ $audio_codec = "null" ]
+          if [ -z ${OPTARG,,} ]
           then
-            printf "You have not entered a supported audio codec.\\n"
-            exit 0
+            if [ -z "$video_codec" ]
+            then
+              printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+              exit 0
+            else
+              printf "\\n\\e[93mYou've specified no audio codec, enabling video-only mode"
+              audio_codec=""
+            fi
+          else
+            check_variable audio ${OPTARG,,}
+            if [ $audio_codec = "null" ]
+            then
+              printf "You have not entered a supported audio codec.\\n"
+              exit 0
+            fi
           fi
           ;;
         d)
@@ -1122,11 +1180,23 @@ case "$command" in
           fi
           ;;
         v)
-          check_variable video ${OPTARG,,}
-          if [ $video_codec = "null" ]
+          if [ -z ${OPTARG,,} ]
           then
-            printf "You have not entered a supported video codec.\\n"
-            exit 0
+            if [ -z "$audio_codec" ]
+            then
+              printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+              exit 0
+            else
+              printf "\\n\\e[93mYou've specified no video codec, enabling audio-only mode"
+              video_codec=""
+            fi
+          else
+            check_variable video ${OPTARG,,}
+            if [ $video_codec = "null" ]
+            then
+              printf "You have not entered a supported video codec.\\n"
+              exit 0
+            fi
           fi
           ;;
         \?)
