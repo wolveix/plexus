@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.36 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.37 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -944,7 +944,7 @@ function func_list {
     file_audio_codec=""
     file_video_codec=""
 
-  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.mpg' -or -name '*.wmv')
+  done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.ts' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
 }
 
