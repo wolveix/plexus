@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.39 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.40 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -831,7 +831,7 @@ function func_install {
               "4")
                   printf "\\n\\e[36mInstalling RClone.\\n\\n\\e[0m"
                   $packages install curl unzip
-                  case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash -s beta) in
+                  case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash) in
                     0)
                       printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
                       printf "\\e[32mRClone has been installed!\\e[0m\\n"
