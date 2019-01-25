@@ -19,12 +19,15 @@ $packages update && $packages upgrade
 $packages install curl ffmpeg sudo > /dev/null
 mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 cd /tmp/plexus || exit
-if [ ! -f "$HOME/.config/plexus/plexus.conf" ]
-then
+if [ ! -f "$HOME/.config/plexus/plexus.conf" ]; then
   curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf 2>/dev/null
   mv plexus.conf "$HOME"/.config/plexus/
 fi
-curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus 2>/dev/null
+if [ ! -z "$1" ] && [ "$1" == "dev" ]; then
+  curl -O https://raw.githubusercontent.com/Wolveix/Plexus/dev/plexus 2>/dev/null
+else
+  curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus 2>/dev/null
+fi
 chmod u+x plexus
 
 OS="$(uname)"

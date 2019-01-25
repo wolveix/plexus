@@ -803,9 +803,9 @@ function func_install {
                     "2")
                         printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
                         if [ "$distro" == '"CentOS Linux"' ]; then
-                          $packages install build-essential curl gcc-c++ make
+                          $packages install build-essential curl gcc-c++ make perl
                         else
-                          $packages install build-essential curl g++ make
+                          $packages install build-essential curl g++ make perl
                         fi
                         curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
                         printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
