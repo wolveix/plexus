@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.37 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.38 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -15,6 +15,19 @@ else
   mv plexus.conf "$HOME"/.config/plexus/
   printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
 fi
+distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
+case $distro in
+  '"CentOS Linux"')
+    packages="yum -q -y"
+    ;;
+  '"Debian GNU/Linux"' | '"Ubuntu"')
+    packages="apt-get -qq -y"
+    ;;
+  *)
+    printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+    exit
+    ;;
+esac
 
 if [ "$(dpkg-query -W -f='${Status}' ffmpeg 2>/dev/null | grep -c "ok installed")" -eq 1 ]
 then
@@ -750,7 +763,7 @@ function func_install {
               case $answer in
               "1")
                   printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
-                  sudo apt-get install curl ffmpeg fuse unzip -y -qq
+                  $packages install curl ffmpeg fuse unzip
                   case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash -s beta) in
                     0)
                       printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
@@ -783,13 +796,13 @@ function func_install {
                     case $answer in
                     "1")
                         printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
-                        sudo apt-get install ffmpeg -y -qq
+                        $packages install ffmpeg
                         printf "\\e[32mFFmpeg has been installed!\\e[0m\\n"
                         exit 0
                         ;;
                     "2")
                         printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-                        sudo apt-get install build-essential curl g++ -y -qq
+                        $packages install build-essential curl g++
                         curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
                         printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
                         sudo /bin/mv -f "$HOME/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
@@ -811,13 +824,13 @@ function func_install {
                   ;;
               "3")
                   printf "\\n\\e[36mInstalling Fuse.\\n\\n\\e[0m"
-                  sudo apt-get install fuse -y -qq
+                  $packages install fuse
                   printf "\\e[32mFuse has been installed!\\e[0m\\n"
                   exit 0
                   ;;
               "4")
                   printf "\\n\\e[36mInstalling RClone.\\n\\n\\e[0m"
-                  sudo apt-get install curl unzip -y -qq
+                  $packages install curl unzip
                   case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash -s beta) in
                     0)
                       printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
@@ -950,7 +963,7 @@ function func_list {
 
 function func_mount {
   printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
-  if ! $rclone_binary mount $rclone_remote $media_dir --allow-non-empty --allow-other --cache-db-purge --fast-list --poll-interval 10m &
+  if ! $rclone_binary mount $rclone_remote $media_dir --allow-other --buffer-size 256M --dir-cache-time 72h --drive-chunk-size 32M --log-level INFO --log-file $HOME/.plexus/logs/rclone.log --timeout 1h --umask 002 --vfs-read-chunk-size 128M --vfs-read-chunk-size-limit off &
   then
     printf "\\nAn uknown error occurred (does the remote exist?)\\n\\e[0m"
   else

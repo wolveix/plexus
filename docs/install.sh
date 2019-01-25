@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
 printf "\\e[93m=== Plexus v0.9.37 - Developed by Robert Thomas ==="
-printf "\\n=== https://github.com/Wolveix/Plexus ==="
+printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
+distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
+case $distro in
+  '"CentOS Linux"')
+    packages="yum -q -y"
+    ;;
+  '"Debian GNU/Linux"' | '"Ubuntu"')
+    packages="apt-get -qq -y"
+    ;;
+  *)
+    printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+    exit
+    ;;
+esac
 printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
-apt-get install curl ffmpeg -f -y -qq
-printf "\\n\\e[36mCreating directories if they don't already exist.\\n\\e[94m"
+$packages update && $packages upgrade
+$packages install curl ffmpeg sudo > /dev/null
 mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 cd /tmp/plexus || exit
 if [ ! -f "$HOME/.config/plexus/plexus.conf" ]
 then
-  curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf 2>/dev/null
+  curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf 2>/dev/null
   mv plexus.conf "$HOME"/.config/plexus/
 fi
-curl -O https://plexus.robt.me/versions/releases/latest/plexus 2>/dev/null
+curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus 2>/dev/null
 chmod u+x plexus
 
 OS="$(uname)"
@@ -33,6 +46,5 @@ case ${OS,,} in
     mv plexus /usr/local/bin/plexus
     ;;
 esac
-
 printf "\\n\\e[32mInstall completed!\\n"
 printf "\\nPlease run 'plexus help' to see a list of available commands.\\n\\e[0m"

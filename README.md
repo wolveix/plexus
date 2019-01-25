@@ -19,13 +19,13 @@ mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.pl
 
 Download the default config file and move it into the correct location:
 ``` shell
-curl -O https://plexus.robt.me/versions/releases/latest/plexus.conf
+curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf
 mv plexus.conf "$HOME"/.config/plexus/
 ```
 
 Next, download the executable itself:
 ``` shell
-curl -O https://plexus.robt.me/versions/releases/latest/plexus
+curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus
 ```
 
 Finally, correct the file permissions and move it into your respective operating system's application directory. The following example is for Linux:
