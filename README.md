@@ -2,7 +2,6 @@
 A suite of tools to help manage the media behind a Plex server.
 
 ## Install
-
 ### Automatic
 You can automatically install Plexus by running the following line via a supported command line interface:
 ``` shell
