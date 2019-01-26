@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.41 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.42 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -810,7 +810,14 @@ function func_install {
                         ;;
                     "2")
                         printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-                        $packages install build-essential curl g++ make perl
+                        if [ "$distro" == '"CentOS Linux"' ]; then
+                          $packages install build-essential bzip2 curl gcc-c++ make perl which
+                          mkdir -p "$HOME/ffmpeg-build/packages/"
+                          curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
+                          tar xvjf last_x264.tar.bz2 -C "$HOME/ffmpeg-build/packages/"
+                        else
+                          $packages install build-essential curl g++ make perl
+                        fi
                         curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
                         printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
                         sudo /bin/mv -f "$HOME/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
