@@ -23,11 +23,7 @@ if [ ! -f "$HOME/.config/plexus/plexus.conf" ]; then
   curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf 2>/dev/null
   mv plexus.conf "$HOME"/.config/plexus/
 fi
-if [ ! -z "$1" ] && [ "$1" == "dev" ]; then
-  curl -O https://raw.githubusercontent.com/Wolveix/Plexus/dev/plexus 2>/dev/null
-else
-  curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus 2>/dev/null
-fi
+curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus 2>/dev/null
 chmod u+x plexus
 
 OS="$(uname)"
