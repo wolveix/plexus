@@ -1,22 +1,26 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.42 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.43 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 case $distro in
   '"CentOS Linux"')
-    packages="yum -q -y"
+    printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
+    yum -q -y install epel-release
+    yum -q -y update && yum -q -y upgrade
+    rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+    rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+    yum -q -y install curl ffmpeg ffmpeg-devel
     ;;
   '"Debian GNU/Linux"' | '"Ubuntu"')
-    packages="apt-get -qq -y"
+    printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
+    apt-get -qq -y update && apt-get -qq -y upgrade
+    apt-get -qq -y install curl ffmpeg
     ;;
   *)
     printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
     exit
     ;;
 esac
-printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
-$packages update && $packages upgrade
-$packages install curl ffmpeg sudo > /dev/null
 mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 cd /tmp/plexus || exit
 if [ ! -f "$HOME/.config/plexus/plexus.conf" ]; then
