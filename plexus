@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.43 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.44 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]
 then
@@ -1015,7 +1015,7 @@ case "$command" in
     func_config
     ;;
   encode)
-    while getopts ":a:fl:p:r:v:-:" opt; do
+    while getopts ":a:d:fl:p:r:v:-:" opt; do
       case $opt in
         a)
           if [ -z ${OPTARG,,} ]
@@ -1117,7 +1117,7 @@ case "$command" in
     done
     if [ $OPTIND -eq 1 ]
     then
-      printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt -d /path/to/media/ [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
+      printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
       exit 0
     fi
     if [ ! -z "$list_file" ]
@@ -1140,7 +1140,7 @@ case "$command" in
         printf "This command tells you more about it's creation.\\n"
         ;;
       "encode")
-        printf "\n\\e[39mAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /path/to/list.txt -d /path/to/media/ [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -d              Media directory. Default = $media_dir\\n                  This is the directory that your media is stored\\n                  within\\n\\n  -f              Force overwrite. Default = $force_overwrite\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = $list_file\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              RClone remote. Use this for RClone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured RClone\\n                  remote\\n\\n  -v              Video codec. Default = $video_codec\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit RClone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when expriencing issues\\n"
+        printf "\n\\e[39mAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -f              Force overwrite. Default = $force_overwrite\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = $list_file\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              RClone remote. Use this for RClone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured RClone\\n                  remote\\n\\n  -v              Video codec. Default = $video_codec\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit RClone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when expriencing issues\\n"
         ;;
       *)
         func_help
