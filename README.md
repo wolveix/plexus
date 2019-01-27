@@ -9,15 +9,20 @@ curl https://plexus.robt.me/install.sh | sudo bash
 ```
 
 ### Manual
-Alternatively, you can manually install Plexus to a custom location on your device.
+Alternatively, you can manually install Plexus to a custom location on your device. You should install sudo if it doesn't already exist on your system.
 Install any missing dependencies (Debian/Ubuntu):
 ``` shell
-sudo apt-get install curl ffmpeg unzip -y
+sudo apt-get -qq -y update && sudo apt-get -qq -y upgrade
+sudo apt-get -qq -y install curl ffmpeg
 ```
 
-If you're using CentOS/Rhel, you'll need to install FFmpeg via the custom build option within the `plexus install` function. Install the other missing dependencies:
+Install any missing dependencies (CentOS/Rhel):
 ``` shell
-sudo yum install curl unzip -y
+sudo yum -q -y install epel-release
+sudo yum -q -y update && yum -q -y upgrade
+sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
+sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+sudo yum -q -y install curl ffmpeg ffmpeg-devel
 ```
 
 Create all of the temporary folders required:

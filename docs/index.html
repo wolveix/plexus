@@ -53,13 +53,18 @@
                            </div>
                            <div id="installation-manual" class="section-block">
                               <h3 class="block-title">Manual</h3>
-                              <p>Alternatively, you can manually install Plexus to a custom location on your device.</p>
+                              <p>Alternatively, you can manually install Plexus to a custom location on your device. You should install sudo if it doesn't already exist on your system.</p>
                               <br>
                               <p>Install any missing dependencies (Debian/Ubuntu):</p>
-                              <p><code>sudo apt-get install curl ffmpeg unzip -y</code></p>
+                              <p><code>sudo apt-get -qq -y update && sudo apt-get -qq -y upgrade</code></p>
+                              <p><code>sudo apt-get -qq -y install curl ffmpeg</code></p>
                               <br>
                               <p>If you're using CentOS/Rhel, you'll need to install FFmpeg via the custom build option within the `plexus install` function. Install the other missing dependencies:</p>
-                              <p><code>sudo yum install curl unzip -y</code></p>
+                              <p><code>sudo yum -q -y install epel-release</code></p>
+                              <p><code>sudo yum -q -y update && yum -q -y upgrade</code></p>
+                              <p><code>sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro</code></p>
+                              <p><code>sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm</code></p>
+                              <p><code>sudo yum -q -y install curl ffmpeg ffmpeg-devel</code></p>
                               <br>
                               <p>Create all of the temporary folders required:</p>
                               <p><code>mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus</code></p>
