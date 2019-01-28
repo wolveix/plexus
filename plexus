@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.45 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.46 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -411,7 +411,8 @@ function func_encode {
         if [ ! -z "$rclone_remote" ]; then
           if [ "$dependency_rclone" = true ]; then
             printf "Downloading: $FILE\\n"
-            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir" "$rclone_bwlimit" --stats-log-level NOTICE --stats 30s; then
+            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir" "$rclone_bwlimit" --stats-log-level NOTICE --stats 30s
+            then
               printf "\\n\e[31mFile could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n\\n"
               /bin/sed -i 1d "$list_file"
               echo "$line" >> "$list_file"
