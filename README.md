@@ -20,8 +20,7 @@ Install any missing dependencies (CentOS/Rhel):
 ``` shell
 sudo yum -q -y install epel-release
 sudo yum -q -y update && sudo yum -q -y upgrade
-sudo rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-sudo rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+sudo yum localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
 sudo yum -q -y install curl ffmpeg ffmpeg-devel
 ```
 

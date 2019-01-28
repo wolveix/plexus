@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.46 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.47 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -411,9 +411,9 @@ function func_encode {
         if [ ! -z "$rclone_remote" ]; then
           if [ "$dependency_rclone" = true ]; then
             printf "Downloading: $FILE\\n"
-            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir" "$rclone_bwlimit" --stats-log-level NOTICE --stats 30s
+            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir" $rclone_bwlimit --stats-log-level NOTICE --stats 30s
             then
-              printf "\\n\e[31mFile could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n\\n"
+              printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n\\n"
               /bin/sed -i 1d "$list_file"
               echo "$line" >> "$list_file"
               file_exists=0
@@ -431,9 +431,12 @@ function func_encode {
           printf "Copying: $FILE\\n"
           /bin/cp "$line" "$convert_dir"
           printf "\\nFile copied."
+          file_exists=1
         else
-          printf "Error: $line does not exist.\\n"
-          exit 0
+          printf "\\n\e[31mError: $line does not exist.\\n\\n\e[0mMoving onto the next line.\\n\\n"
+          /bin/sed -i 1d "$list_file"
+          echo "$line" >> "$list_file"
+          file_exists=0
         fi
       fi
 
@@ -500,14 +503,15 @@ function func_encode {
           options="-crf 20 -level 4.1 $options"
         fi
 
-        if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" "$codecs" "$options" -nostdin "$ffmpeg_verbose" -stats "$converted_dir/$NAME.$media_container"; then
+        if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"; then
           if [ "$codec_copy" = true ]; then
             printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
             if [ ! -z "$audio_codec" ]; then
               encode_audio_codec="$audio_codec"
             fi
 
-            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $encode_audio_codec "$options" -nostdin "$ffmpeg_verbose" -stats "$converted_dir/$NAME.$media_container"; then
+            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $encode_audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
+            then
               printf "$ffmpeg_error"
               exit 0
             fi
@@ -522,7 +526,7 @@ function func_encode {
           if [ ! -z "$rclone_remote" ]; then
             if [ "$force_overwrite" = true ]; then
               printf "\\nDeleting original file from RClone remote.\\n"
-              $rclone_binary delete "$rclone_remote$line" "$rclone_bwlimit" --stats-log-level NOTICE --stats 30s
+              $rclone_binary delete "$rclone_remote$line" $rclone_bwlimit --stats-log-level NOTICE --stats 30s
               printf "\\nOriginal file deleted."
             else
               mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
@@ -530,7 +534,7 @@ function func_encode {
               printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
             fi
             printf "\\nUploading converted file to RClone remote.\\n"
-            $rclone_binary move "$converted_dir/$NAME.$media_container" "$rclone_remote$DIRP" "$rclone_bwlimit" --stats-log-level NOTICE --stats 30s
+            $rclone_binary move "$converted_dir/$NAME.$media_container" "$rclone_remote$DIRP" $rclone_bwlimit --stats-log-level NOTICE --stats 30s
             printf "\\nFile successfully uploaded."
           else
             if [ "$force_overwrite" = true ]; then
@@ -567,157 +571,91 @@ function func_help {
 }
 
 function func_install {
-    printf "\\e[33mWhat would you like to do?\\e[33m\\n\\e[0m\\n1 - Install missing dependencies\\n2 - Reinstall/Update Plexus\\n0 - Exit\\n"
-    answer="waiting"
-    while [ ! -z $answer ]; do
-        read -r -n 1 -p '' answer
-        case $answer in
-        "1")
-            printf "\\n\\nWhich dependency?\\n1 - All\\n2 - FFmpeg\\n3 - Fuse\\n4 - RClone\\n0 - Exit\\n"
-            answer="waiting"
-            while [ ! -z $answer ]; do
-              read -r -n 1 -p '' answer
-              case $answer in
-              "1")
-                  printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
-                  $packages install curl ffmpeg fuse unzip
-                  case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash -s beta) in
-                    0)
-                      printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
-                      printf "\\e[32mAll dependencies have been installed!\\e[0m\\n"
-                      exit 0
-                      ;;
-                    2)
-                      printf "\\e[31mYour operating system is not supported by RClone.\\e[0m\\n"
-                      printf "\\e[32mFFmpeg and Fuse have been installed!\\e[0m\\n"
-                      exit 0
-                      ;;
-                    3)
-                      printf "\\e[36mRClone is already up-to-date!\\e[0m\\n"
-                      printf "\\e[32mFFmpeg and Fuse have been installed!\\e[0m\\n"
-                      exit 0
-                      ;;
-                    *)
-                      printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
-                      printf "\\e[32mAll dependencies have been installed!\\e[0m\\n"
-                      exit 0
-                  esac
-                  exit 0
-                  ;;
-              "2")
-                  printf "\\n\\nWhich version?\\n1 - FFmpeg\\n2 - FFmpeg (custom)\\n0 - Exit\\n"
-                  answer="waiting"
-                  while [ ! -z $answer ]; do
-                    read -r -n 1 -p '' answer
-                    case $answer in
-                    "1")
-                        printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
-                        if [ "$distro" == '"CentOS Linux"' ]; then
-                          $packages install epel-release
-                          $packages update
-                          rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-                          rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
-                          $packages install ffmpeg ffmpeg-devel
-                        else
-                          $packages install ffmpeg
-                        fi
-                        printf "\\e[32mFFmpeg has been installed!\\e[0m\\n"
-                        exit 0
-                        ;;
-                    "2")
-                        printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-                        if [ "$distro" == '"CentOS Linux"' ]; then
-                          $packages install build-essential bzip2 curl gcc-c++ make perl which
-                          mkdir -p "$HOME/ffmpeg-build/packages/"
-                          curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
-                          tar xvjf last_x264.tar.bz2 -C "$HOME/ffmpeg-build/packages/"
-                        else
-                          $packages install build-essential curl g++ make perl
-                        fi
-                        curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
-                        printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
-                        sudo /bin/mv -f "$HOME/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
-                        printf "\\nRemoving FFmpeg build files.\\n"
-                        sudo /bin/rm -r "$HOME/ffmpeg-build"
-                        printf "\\n\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
-                        exit 0
-                        ;;
-                    "0")
-                        printf "\\n\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
-                        exit 0
-                        ;;
-                    *)
-                        answer="invalid"
-                        printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\e[0m\\n"
-                        ;;
-                    esac
-                  done
-                  ;;
-              "3")
-                  printf "\\n\\e[36mInstalling Fuse.\\n\\n\\e[0m"
-                  $packages install fuse
-                  printf "\\e[32mFuse has been installed!\\e[0m\\n"
-                  exit 0
-                  ;;
-              "4")
-                  printf "\\n\\e[36mInstalling RClone.\\n\\n\\e[0m"
-                  $packages install curl unzip
-                  case $(curl https://rclone.org/install.sh 2>/dev/null | sudo bash) in
-                    0)
-                      printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
-                      printf "\\e[32mRClone has been installed!\\e[0m\\n"
-                      exit 0
-                      ;;
-                    2)
-                      printf "\\e[31mYour operating system is not supported by RClone.\\e[0m\\n"
-                      exit 0
-                      ;;
-                    3)
-                      printf "\\e[36mRClone is already up-to-date!\\e[0m\\n"
-                      exit 0
-                      ;;
-                    *)
-                      printf "\\e[36mIf you haven't already, setup an RClone remote via 'rclone config'\\e[0m\\n"
-                      printf "\\e[32mRClone has been installed!\\e[0m\\n"
-                      exit 0
-                  esac
-                  ;;
-              "0")
-                  printf "\\n\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
-                  exit 0
-                  ;;
-              *)
-                  answer="invalid"
-                  printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\e[0m\\n"
-                  ;;
-              esac
-            done
-            ;;
-        "2")
-            config_file="$HOME/.config/plexus/plexus.conf.bak"
-            if [ -f "$config_file" ]; then
-              i=1
-              while [ -f "$config_file.$i" ]; do
-                  let i++
-              done
-              config_file="$config_file.$i"
-            fi
+  printf "\\nWhat would you like to do?\\n"
+  select option in "Install missing dependencies" "Update Plexus" "Exit"
+  do
+    case "$option" in
+      "Install missing dependencies")
+        printf "\\nWhich dependency?\\n"
+        select option in "All" "FFmpeg" "FFmpeg (custom)" "Fuse" "RClone" "Exit"
+        do
+          case "$option" in
+            "All")
+              printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
+              $packages install curl ffmpeg fuse unzip
+              curl https://rclone.org/install.sh 2>/dev/null | sudo bash
+              ;;
+            "FFmpeg")
+              printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
+              if [ "$distro" == '"CentOS Linux"' ]; then
+                $packages install epel-release
+                $packages update
+                $packages localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
+                $packages install ffmpeg ffmpeg-devel
+              else
+                $packages install ffmpeg
+              fi
+              printf "\\e[32mFFmpeg has been installed!\\e[0m\\n"
+              exit 0
+              ;;
+            "FFmpeg (custom)")
+              printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
+              if [ "$distro" == '"CentOS Linux"' ]; then
+                $packages install build-essential bzip2 curl gcc-c++ make perl which
+                mkdir -p "$HOME/ffmpeg-build/packages/"
+                curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
+                tar xvjf last_x264.tar.bz2 -C "$HOME/ffmpeg-build/packages/"
+              else
+                $packages install build-essential curl g++ make perl
+              fi
+              curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
+              printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
+              sudo /bin/mv -f "$HOME/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
+              printf "\\nRemoving FFmpeg build files.\\n"
+              sudo /bin/rm -r "$HOME/ffmpeg-build"
+              printf "\\n\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
+              exit 0
+              ;;
+            "Fuse")
+              printf "\\n\\e[36mInstalling Fuse.\\n\\n\\e[0m"
+              $packages install fuse
+              printf "\\e[32mFuse has been installed!\\e[0m\\n"
+              exit 0
+              ;;
+            "RClone")
+              printf "\\n\\e[36mInstalling RClone.\\n\\n\\e[0m"
+              $packages install curl unzip
+              curl https://rclone.org/install.sh 2>/dev/null | sudo bash
+              exit 0
+              ;;
+            "Exit")
+              printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+              exit 0
+              ;;
+          esac
+        done
+        ;;
+      "Update Plexus")
+        config_file="$HOME/.config/plexus/plexus.conf.bak"
+        if [ -f "$config_file" ]; then
+          i=1
+          while [ -f "$config_file.$i" ]; do
+              let i++
+          done
+          config_file="$config_file.$i"
+        fi
 
-            /bin/mv "$HOME/.config/plexus/plexus.conf" "$config_file"
-            printf "\\n\\nYour current config file has been backed up ($config_file).\\n"
-            curl https://plexus.robt.me/install.sh 2>/dev/null | sudo bash
-            exit 0
-            ;;
-        "0")
-            printf "\\n\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
-            exit 0
-            ;;
-        *)
-            answer="invalid"
-            printf "\\n\\nPlease enter a valid menu option. Enter 0 to exit.\\n"
-            ;;
-        esac
-    done
+        /bin/mv "$HOME/.config/plexus/plexus.conf" "$config_file"
+        printf "\\n\\nYour current config file has been backed up ($config_file).\\n"
+        curl https://plexus.robt.me/install.sh 2>/dev/null | sudo bash
+        exit 0
+        ;;
+      "Exit")
+        printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+        exit 0
+        ;;
+    esac
+  done
 }
 
 function func_list {
@@ -725,7 +663,7 @@ function func_list {
 
   if [ -f "$list_file" ]; then
       answer="waiting"
-      while [ ! -z $answer ]; do
+      while [ -n $answer ]; do
           read -r -n 1 -p 'This will delete the current list file. Do you want to continue? ' answer
 
           case ${answer,,} in
@@ -755,7 +693,7 @@ function func_list {
   	file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
   	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
 
-    if [ ! -z "$file_audio_codec" ] || [ ! -z "$file_video_codec" ];   then
+    if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ];   then
       if [ -z "$audio_codec" ]; then
         if [[ "$file_video_codec" != "$video_codec" ]]; then
           printf "\\e[34mAdding: $line\\n"
@@ -853,7 +791,7 @@ case "$command" in
           ;;
         r)
           $rclone_binary listremotes > "$HOME"/.plexus/rclone/remotes.txt
-          if [ ! -z "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]; then
+          if [ -n "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]; then
             if [ "${OPTARG: -1}" == ":" ]; then
                 rclone_remote="$OPTARG"
             else
@@ -907,7 +845,7 @@ case "$command" in
       printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
       exit 0
     fi
-    if [ ! -z "$list_file" ]; then
+    if [ -n "$list_file" ]; then
       if [ $dependency_ffmpeg = true ]; then
         func_encode
       else

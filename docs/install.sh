@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.45 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.47 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 case $distro in
@@ -7,8 +7,7 @@ case $distro in
     printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
     yum -q -y install epel-release
     yum -q -y update && yum -q -y upgrade
-    rpm --import http://li.nux.ro/download/nux/RPM-GPG-KEY-nux.ro
-    rpm -Uvh http://li.nux.ro/download/nux/dextop/el7/x86_64/nux-dextop-release-0-1.el7.nux.noarch.rpm
+    yum localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
     yum -q -y install curl ffmpeg ffmpeg-devel
     ;;
   '"Debian GNU/Linux"' | '"Ubuntu"')
