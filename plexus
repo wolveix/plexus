@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.56 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.57 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -458,7 +458,7 @@ function func_encode {
       else
         if [ -f "$line" ]; then
           printf "\\e[34mCopying: $FILE\\e[0m\\n"
-          $rsync_binary -ah --progress "$line" "$convert_dir"
+          $rsync_binary -ah --info=progress2 "$line" "$convert_dir"
           printf "\\n\\e[34mFile copied.\\e[0m\\n"
           file_exists=1
         else
@@ -574,11 +574,11 @@ function func_encode {
                 /bin/rm "$line"
                 printf "\\n\\e[34mOriginal file deleted.\\e[0m"
               else
-                $rsync_binary -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
+                $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
                 printf "\\n\\e[93mForce overwrite is disabled, new filename = $NAME [Plexus Encode].$media_container\\e[0m"
               fi
               printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m\\n"
-              $rsync_binary -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$DIRP"
+              $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME.$media_container" "$DIRP"
               printf "\\n\\e[34mFile successfully moved.\\e[0m"
             fi
             printf "\\n\\e[34mDeleting cached file and delisting it."
