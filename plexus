@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.49 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.50 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -405,6 +405,7 @@ function func_encode {
   while read line; do
     if [ -n "$line" ]; then
       DIRP=${line%/*}
+      EXT=${line##*.}
       FILE=${line##*/}
       NAME=${FILE%.*}
       if [ "$remote_transfer" = true ]; then
@@ -659,7 +660,7 @@ function func_install {
 }
 
 function func_list {
-  printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
+  printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
 
   if [ ! -d "$media_dir" ]; then
     printf "\\e[31mThe specified media directory ($media_dir) does not exist.\\n\\e[0m"
@@ -687,27 +688,21 @@ function func_list {
   printf "\\e[32mScanning directory...\\n"
   while IFS= read -r line; do
     DIRP=${line%/*}
+    EXT=${line##*.}
     FILE=${line##*/}
     NAME=${FILE%.*}
     printf "\\e[94mScanning: $line\\n"
   	file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
   	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
 
-    if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ];   then
-      if [ -z "$audio_codec" ]; then
-        if [[ "$file_video_codec" != "$video_codec" ]]; then
-          printf "\\e[34mAdding: $line\\n"
-          line=${line#"$mount_dir"}
-          echo "$line" >> "$list_file"
-        fi
-      elif [ -z "$video_codec" ]; then
-        if [[ "$file_audio_codec" != "$audio_codec" || "$file_video_codec" != "$video_codec" ]]; then
-          printf "\\e[34mAdding: $line\\n"
-          line=${line#"$mount_dir"}
-          echo "$line" >> "$list_file"
-        fi
+    if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ] || [ -n "$EXT" ]; then
+      if [ "$EXT" != "$media_container" ] || [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
+        printf "\\e[34mAdding: $line\\n"
+        line=${line#"$mount_dir"}
+        echo "$line" >> "$list_file"
       fi
     fi
+    EXT=""
     file_audio_codec=""
     file_video_codec=""
   done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.ts' -or -name '*.mpg' -or -name '*.wmv')
@@ -767,6 +762,15 @@ case "$command" in
               check_variable audio ${OPTARG,,}
               if [ $audio_codec = "null" ]; then
                 printf "You have not entered a supported audio codec.\\n"
+                exit 0
+              fi
+            fi
+            ;;
+          c)
+            if [ -n "${OPTARG,,}" ]; then
+              check_variable container "${OPTARG,,}"
+              if [ $media_container = "null" ]; then
+                printf "You have not entered a supported media container.\\n"
                 exit 0
               fi
             fi
@@ -842,7 +846,7 @@ case "$command" in
         esac
       done
       if [ $OPTIND -eq 1 ]; then
-        printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
+        printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
         exit 0
       fi
       if [ ! -z "$list_file" ]; then
@@ -875,7 +879,7 @@ case "$command" in
     shift $((OPTIND -1))
     ;;
   list)
-    while getopts ":a:d:l:m:v:" opt; do
+    while getopts ":a:c:d:l:m:v:" opt; do
       case $opt in
         a)
           if [ -z "${OPTARG,,}" ]; then
@@ -890,6 +894,15 @@ case "$command" in
             check_variable audio "${OPTARG,,}"
             if [ $audio_codec = "null" ]; then
               printf "You have not entered a supported audio codec.\\n"
+              exit 0
+            fi
+          fi
+          ;;
+        c)
+          if [ -n "${OPTARG,,}" ]; then
+            check_variable container "${OPTARG,,}"
+            if [ $media_container = "null" ]; then
+              printf "You have not entered a supported media container.\\n"
               exit 0
             fi
           fi
@@ -951,7 +964,7 @@ case "$command" in
       esac
     done
     if [ $OPTIND -eq 1 ]; then
-      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for RClone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
+      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for RClone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
       exit 0
     fi
     func_list
