@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.53 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.54 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
-  if [ -z "$audio_codec" ] || [ -z "$convert_dir" ] || [ -z "$converted_dir" ] || [ -z "$ffmpeg_binary" ] || [ -z "$ffmpeg_threads" ] || [ -z "$ffmpeg_preset" ] || [ -z "$ffprobe_binary" ] || [ -z "$force_overwrite" ] || [ -z "$list_file" ] || [ -z "$media_container" ] || [ -z "$media_dir" ] || [ -z "$video_codec" ] || [ -z "$video_library" ]; then
-    printf "$audio_codec"
+  if [ -z "$audio_codec" ] || [ -z "$convert_dir" ] || [ -z "$converted_dir" ] || [ -z "$ffmpeg_threads" ] || [ -z "$ffmpeg_preset" ] || [ -z "$force_overwrite" ] || [ -z "$list_file" ] || [ -z "$media_container" ] || [ -z "$media_dir" ] || [ -z "$video_codec" ] || [ -z "$video_library" ]; then
     printf "Your config file ($HOME/.config/plexus/plexus.conf) is missing required parameters.\\nMove or delete it and then run Plexus again.\\n"
     exit 0
   fi
@@ -28,22 +27,46 @@ case $distro in
     ;;
 esac
 
-if [ "$(dpkg-query -W -f='${Status}' ffmpeg 2>/dev/null | grep -c "ok installed")" -eq 1 ]; then
-  dependency_ffmpeg=true
+function set_config(){
+    ovalue=$(echo $1 | sed 's_/_\\/_g')
+    nvalue=$(echo $2 | sed 's_/_\\/_g')
+    sed -ie "s/$ovalue/$nvalue/g" "$HOME"/.config/plexus/plexus.conf
+}
+
+if [ -z "$ffmpeg_binary" ]; then
+  ffmpeg_binary=$(command -v ffmpeg)
+  set_config "ffmpeg_binary=\"\"" "ffmpeg_binary=\"$ffmpeg_binary\""
 else
-  dependency_ffmpeg=false
+  if [ ! -f "$ffmpeg_binary" ]; then
+    ffmpeg_binary=""
+  fi
 fi
 
-if [ "$(dpkg-query -W -f='${Status}' fuse 2>/dev/null | grep -c "ok installed")" -eq 1 ]; then
-  dependency_fuse=true
+if [ -z "$ffprobe_binary" ]; then
+  ffprobe_binary=$(command -v ffprobe)
+  set_config "ffprobe_binary=\"\"" "ffprobe_binary=\"$ffprobe_binary\""
 else
-  dependency_fuse=false
+  if [ ! -f "$ffprobe_binary" ]; then
+    ffprobe_binary=""
+  fi
 fi
 
-if [ -f "$HOME/.config/rclone/rclone.conf" ]; then
-  dependency_rclone=true
+if [ -z "$fusermount_binary" ]; then
+  fusermount_binary=$(command -v fusermount)
+  set_config "fusermount_binary=\"\"" "fusermount_binary=\"$fusermount_binary\""
 else
-  dependency_rclone=false
+  if [ ! -f "$fusermount_binary" ]; then
+    fusermount_binary=""
+  fi
+fi
+
+if [ -z "$rclone_binary" ]; then
+  rclone_binary=$(command -v rclone)
+  set_config "rclone_binary=\"\"" "rclone_binary=\"$rclone_binary\""
+else
+  if [ ! -f "$rclone_binary" ]; then
+    rclone_binary=""
+  fi
 fi
 
 function main () {
@@ -57,12 +80,6 @@ function main () {
       echo "[${LOG_LEVELS[$LEVEL]}]" "$@"
     fi
   }
-}
-
-function set_config(){
-    ovalue=$(echo $1 | sed 's_/_\\/_g')
-    nvalue=$(echo $2 | sed 's_/_\\/_g')
-    sed -ie "s/$ovalue/$nvalue/g" "$HOME"/.config/plexus/plexus.conf
 }
 
 function check_variable {
@@ -412,7 +429,7 @@ function func_encode {
       NAME=${FILE%.*}
       if [ "$remote_transfer" = true ]; then
         if [ -n "$rclone_remote" ]; then
-          if [ "$dependency_rclone" = true ]; then
+          if [ -n "$rclone_binary" ]; then
             printf "Downloading: $FILE\\n"
             if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir" $rclone_bwlimit --stats-one-line -P
             then
@@ -868,8 +885,8 @@ case "$command" in
         printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
         exit 0
       fi
-      if [ ! -z "$list_file" ]; then
-        if [ $dependency_ffmpeg = true ]; then
+      if [ -n "$list_file" ]; then
+        if [ -n "$ffmpeg_binary" ]; then
           func_encode
         else
           printf "\\e[31mPlease install ffmpeg to use this command\\e[0m\\n"
@@ -990,60 +1007,70 @@ case "$command" in
     shift $((OPTIND -1))
     ;;
   mount)
-    if [ $dependency_fuse = true ]; then
-      while getopts ":r:" opt; do
-        case $opt in
-          r)
-            if [ "${OPTARG: -1}" == ":" ]; then
-                rclone_remote="$OPTARG"
-            else
-                rclone_remote="$OPTARG:"
-            fi
-            ;;
-          \?)
-            printf "Invalid option: -$OPTARG.\\n"
-            exit 1
-            ;;
-          :)
-            printf "Option -$OPTARG requires an argument.\\n"
-            exit 1
-            ;;
-        esac
-      done
-      if [ $OPTIND -eq 1 ]; then
-        printf "\\e[39mUsage:\\n  plexus mount -r RCloneRemote:\\n\\nFlags:\\n  -r              RClone remote. Setup via rclone config\\n"
+    if [ -n "$fusermount_binary" ]; then
+      if [ -n "$rclone_binary" ]; then
+        while getopts ":r:" opt; do
+          case $opt in
+            r)
+              if [ "${OPTARG: -1}" == ":" ]; then
+                  rclone_remote="$OPTARG"
+              else
+                  rclone_remote="$OPTARG:"
+              fi
+              ;;
+            \?)
+              printf "Invalid option: -$OPTARG.\\n"
+              exit 1
+              ;;
+            :)
+              printf "Option -$OPTARG requires an argument.\\n"
+              exit 1
+              ;;
+          esac
+        done
+        if [ $OPTIND -eq 1 ]; then
+          printf "\\e[39mUsage:\\n  plexus mount -r RCloneRemote:\\n\\nFlags:\\n  -r              RClone remote. Setup via rclone config\\n"
+          exit 0
+        fi
+        func_mount
+        shift $((OPTIND -1))
+      else
+        printf "\\e[31mPlease install rclone to use this command\\e[0m\\n"
         exit 0
       fi
-      func_mount
-      shift $((OPTIND -1))
     else
       printf "\\e[31mPlease install fuse to use this command\\e[0m\\n"
       exit 0
     fi
     ;;
   unmount)
-    if [ $dependency_fuse = true ]; then
-      while getopts ":d:" opt; do
-        case $opt in
-          d)
-            media_dir=$OPTARG
-            ;;
-          \?)
-            printf "Invalid option: -$OPTARG.\\n"
-            exit 1
-            ;;
-          :)
-            printf "Option -$OPTARG requires an argument.\\n"
-            exit 1
-            ;;
-        esac
-      done
-      if [ $OPTIND -eq 1 ]; then
-        printf "\\e[39mUsage:\\n  plexus unmount -d /path/to/mounted/media/\\n\\nFlags:\\n  -d              Media directory.\\n"
+    if [ -n "$fusermount_binary" ]; then
+      if [ -n "$rclone_binary" ]; then
+        while getopts ":d:" opt; do
+          case $opt in
+            d)
+              media_dir=$OPTARG
+              ;;
+            \?)
+              printf "Invalid option: -$OPTARG.\\n"
+              exit 1
+              ;;
+            :)
+              printf "Option -$OPTARG requires an argument.\\n"
+              exit 1
+              ;;
+          esac
+        done
+        if [ $OPTIND -eq 1 ]; then
+          printf "\\e[39mUsage:\\n  plexus unmount -d /path/to/mounted/media/\\n\\nFlags:\\n  -d              Media directory.\\n"
+          exit 0
+        fi
+        func_unmount
+        shift $((OPTIND -1))
+      else
+        printf "\\e[31mPlease install rclone to use this command\\e[0m\\n"
         exit 0
       fi
-      func_unmount
-      shift $((OPTIND -1))
     else
       printf "\\e[31mPlease install fuse to use this command\\e[0m\\n"
       exit 0
