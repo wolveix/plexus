@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.54 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.55 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -449,7 +449,7 @@ function func_encode {
       else
         if [ -f "$line" ]; then
           printf "\\e[34mCopying: $FILE\\e[0m"
-          /bin/cp "$line" "$convert_dir" & progress -mp $!
+          /bin/rsync -ah --progress "$line" "$convert_dir"
           printf "\\n\\e[34mFile copied.\\e[0m\\n"
           file_exists=1
         else
@@ -565,11 +565,11 @@ function func_encode {
                 /bin/rm "$line"
                 printf "\\n\\e[34mOriginal file deleted.\\e[0m"
               else
-                /bin/mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
+                /bin/rsync -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
                 printf "\\n\\e[93mForce overwrite is disabled, new filename = $NAME [Plexus Encode].$media_container\\e[0m"
               fi
               printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m"
-              /bin/mv "$converted_dir/$NAME.$media_container" "$DIRP" & progress -mp $!
+              /bin/rsync -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$DIRP"
               printf "\\n\\e[34mFile successfully moved.\\e[0m"
             fi
             printf "\\n\\e[34mDeleting cached file and delisting it."
@@ -611,7 +611,7 @@ function func_install {
           case "$option" in
             "All")
               printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
-              $packages install curl ffmpeg fuse progress unzip
+              $packages install curl ffmpeg fuse rsync unzip
               curl https://rclone.org/install.sh 2>/dev/null | sudo bash
               ;;
             "FFmpeg")
