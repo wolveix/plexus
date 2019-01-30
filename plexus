@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.48 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.49 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -219,12 +219,12 @@ function func_about {
 
 function func_config {
   printf "\\nWhat config menu would you like to access?\\n"
-  select option in Binaries Codecs Directories FFmpeg Exit
+  select option in "Binaries" "Codecs" "Directories" "FFmpeg" "Exit"
   do
     case "$option" in
       "Binaries")
         printf "\\nWhich binary do you want to set?\\n"
-        select option in FFprobe FFmpeg RClone Exit
+        select option in "FFprobe" "FFmpeg" "RClone" "Exit"
         do
           case "$option" in
             "FFprobe")
@@ -257,7 +257,7 @@ function func_config {
         ;;
       "Codecs")
         printf "\\nWhich codec do you want to set?\\n"
-        select option in Audio Container Video Exit
+        select option in "Audio" "Container" "Video" "Exit"
         do
           case "$option" in
             "Audio")
@@ -295,7 +295,7 @@ function func_config {
         ;;
       "Directories")
         printf "\\nWhich directory do you want to set?\\n"
-        select option in Convert Converted Media Mount Exit
+        select option in "Convert" "Converted" "Media" "Mount" "Exit"
         do
           case "$option" in
             "Convert")
@@ -335,7 +335,7 @@ function func_config {
         ;;
       "FFmpeg")
         printf "\\nWhich option do you want to set?\\n"
-        select option in CPU ForceOverwrite Preset Exit
+        select option in "CPU" "Force Overwrite" "Preset" "Exit"
         do
           case "$option" in
             "CPU")
@@ -348,7 +348,7 @@ function func_config {
               printf "\\nFFmpeg thread allocation successfully set.\\n"
               exit 0
               ;;
-            "ForceOverwrite")
+            "Force Overwrite")
               printf "\\n\\nEnter true or false: "
 
               while [ "$answer" != false ] || [ "$answer" != true ]; do
@@ -659,29 +659,29 @@ function func_install {
 }
 
 function func_list {
-  printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n"
+  printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
+
+  if [ ! -d "$media_dir" ]; then
+    printf "\\e[31mThe specified media directory ($media_dir) does not exist.\\n\\e[0m"
+    exit 0
+  fi
 
   if [ -f "$list_file" ]; then
-      answer="waiting"
-      while [ -n $answer ]; do
-          read -r -n 1 -p 'This will delete the current list file. Do you want to continue? ' answer
-
-          case ${answer,,} in
-          "y")
-              rm "$list_file"
-              answer=""
-              printf "\\n\\n"
-              ;;
-          "n")
-              printf "\\nYou can find the current list file here: $list_file\\n"
-              exit 4
-              ;;
-          *)
-              answer="invalid"
-              printf "\\nPlease enter yes or no.\\n"
-              ;;
-          esac
-      done
+    printf "\\n\\e[93mThis will delete the current list file. Do you want to continue?\\n\\e[0m"
+    select option in "Yes" "No"
+    do
+      case "$option" in
+        "Yes")
+          rm "$list_file"
+          printf "\\n"
+          break
+          ;;
+        "No")
+          printf "\\nYou can find the current list file here: $list_file\\n"
+          exit 0
+          ;;
+      esac
+    done
   fi
 
   printf "\\e[32mScanning directory...\\n"
@@ -730,7 +730,7 @@ function func_unmount {
     fusermount -uz "$media_dir"
     printf "\\n\\e[32mThe RClone remote has successfully been unmounted!\\n\\e[0m"
   else
-    printf "\\e[31mThe directory does not exist.\\e[0m\\n"
+    printf "\\e[31mThe directory does not exist.\\n\\e[0m"
   fi
 }
 
