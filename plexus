@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.52 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.53 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -402,6 +402,8 @@ function func_encode {
     exit 0
   fi
 
+  printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
+
   while read line; do
     if [ -n "$line" ]; then
       DIRP=${line%/*}
@@ -429,14 +431,11 @@ function func_encode {
         fi
       else
         if [ -f "$line" ]; then
-          printf "Copying: $FILE\\n"
+          printf "\\e[34mCopying: $FILE\\e[0m"
           /bin/cp "$line" "$convert_dir" & progress -mp $!
-          printf "\\nFile copied."
+          printf "\\n\\e[34mFile copied.\\e[0m\\n"
           file_exists=1
         else
-          printf "\\n\e[31mError: $line does not exist.\\n\\n\e[0mMoving onto the next line.\\n\\n"
-          /bin/sed -i 1d "$list_file"
-          echo "$line" >> "$list_file"
           file_exists=0
         fi
       fi
@@ -468,7 +467,7 @@ function func_encode {
             done
           fi
         fi
-        printf "\\n\\nFile codecs:\\nAudio = $file_audio_codec\\nVideo = $file_video_codec\\n\\n"
+        printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
 
         if [ -f "$converted_dir/$FILE" ]; then
           /bin/rm "$converted_dir/$FILE"
@@ -504,6 +503,7 @@ function func_encode {
           options="-crf 20 -level 4.1 $options"
         fi
 
+        encode_success=0
         if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"; then
           if [ "$codec_copy" = true ]; then
             printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
@@ -514,54 +514,65 @@ function func_encode {
             if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $encode_audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
             then
               printf "$ffmpeg_error"
-              exit 0
+              encode_success=0
+            else
+              encode_success=1
             fi
           else
             printf "$ffmpeg_error"
-            exit 0
+            encode_success=0
           fi
+        else
+          encode_success=1
         fi
 
-        printf "\\nFile successfully converted."
-        if [ -f "$convert_dir/$FILE" ]; then
-          if [ -n "$rclone_remote" ]; then
-            if [ "$force_overwrite" = true ]; then
-              printf "\\nDeleting original file from RClone remote.\\n"
-              $rclone_binary delete "$rclone_remote$line" $rclone_bwlimit --stats-one-line -P
-              printf "\\nOriginal file deleted."
+        if [ $encode_success -eq 1 ]; then
+          printf "\\n\\e[92mFile successfully converted.\\e[0m"
+          if [ -f "$convert_dir/$FILE" ]; then
+            if [ -n "$rclone_remote" ]; then
+              if [ "$force_overwrite" = true ]; then
+                printf "\\n\\e[34mDeleting original file from RClone remote.\\e[0m"
+                $rclone_binary delete "$rclone_remote$line" $rclone_bwlimit --stats-one-line -P
+                printf "\\n\\e[34mOriginal file deleted.\\e[0m"
+              else
+                mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
+                NAME="$NAME [Plexus Encode]"
+                printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
+              fi
+              printf "\\n\\e[34mUploading converted file to RClone remote.\\e[0m"
+              $rclone_binary move "$converted_dir/$NAME.$media_container" "$rclone_remote$DIRP" $rclone_bwlimit --stats-one-line -P
+              printf "\\n\\e[34mFile successfully uploaded.\\e[0m"
             else
-              mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
-              NAME="$NAME [Plexus Encode]"
-              printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
+              if [ "$force_overwrite" = true ]; then
+                printf "\\n\\e[34mDeleting original file.\\e[0m"
+                /bin/rm "$line"
+                printf "\\n\\e[34mOriginal file deleted.\\e[0m"
+              else
+                /bin/mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
+                printf "\\n\\e[93mForce overwrite is disabled, new filename = $NAME [Plexus Encode].$media_container\\e[0m"
+              fi
+              printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m"
+              /bin/mv "$converted_dir/$NAME.$media_container" "$DIRP" & progress -mp $!
+              printf "\\n\\e[34mFile successfully moved.\\e[0m"
             fi
-            printf "\\nUploading converted file to RClone remote.\\n"
-            $rclone_binary move "$converted_dir/$NAME.$media_container" "$rclone_remote$DIRP" $rclone_bwlimit --stats-one-line -P
-            printf "\\nFile successfully uploaded."
+            printf "\\n\\e[34mDeleting cached file and delisting it."
+            /bin/rm "$convert_dir/$FILE"
+            /bin/sed -i 1d "$list_file"
+            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n\\n"
           else
-            if [ "$force_overwrite" = true ]; then
-              printf "\\nDeleting original file.\\n"
-              /bin/rm "$line"
-              printf "\\nOriginal file deleted."
-            else
-              mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
-              NAME="$NAME [Plexus Encode]"
-              printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
-            fi
-            printf "\\nMoving converted file to the correct location.\\n"
-            /bin/mv "$converted_dir/$NAME.$media_container" "$line" & progress -mp $!
-            printf "\\nFile successfully moved."
+            printf "\\nFile codecs are already correct. Delisting it.\\n"
+            /bin/sed -i 1d "$list_file"
+            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n\\n"
           fi
-          printf "\\nDeleting cached file and delisting it.\\n"
-          /bin/rm "$convert_dir/$FILE"
-          /bin/sed -i 1d "$list_file"
-          printf "\\nOperation successfully completed.\\n"
         else
-          printf "\\nFile codecs are already correct. Delisting it.\\n"
+          printf "\\n\\e[31mError: $line could not be encoded.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
           /bin/sed -i 1d "$list_file"
-          printf "\\nOperation successfully completed.\\n"
+          echo "$line" >> "$list_file"
         fi
       else
+        printf "\\n\\e[31mError: $line does not exist.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
         /bin/sed -i 1d "$list_file"
+        echo "$line" >> "$list_file"
       fi
     fi
   done < "$list_file"
@@ -754,7 +765,7 @@ case "$command" in
     func_config
     ;;
     encode)
-      while getopts ":a:fl:p:r:v:-:" opt; do
+      while getopts ":a:c:fl:p:r:v:-:" opt; do
         case $opt in
           a)
             if [ -z ${OPTARG,,} ]; then
