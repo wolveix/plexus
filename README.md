@@ -13,7 +13,7 @@ Alternatively, you can manually install Plexus to a custom location on your devi
 Install any missing dependencies (Debian/Ubuntu):
 ``` shell
 sudo apt-get -qq -y update && sudo apt-get -qq -y upgrade
-sudo apt-get -qq -y install curl ffmpeg progress
+sudo apt-get -qq -y install curl ffmpeg rsync
 ```
 
 Install any missing dependencies (CentOS/Rhel):
@@ -21,7 +21,7 @@ Install any missing dependencies (CentOS/Rhel):
 sudo yum -q -y install epel-release
 sudo yum -q -y update && sudo yum -q -y upgrade
 sudo yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
-sudo yum -q -y install curl ffmpeg ffmpeg-devel progress
+sudo yum -q -y install curl ffmpeg ffmpeg-devel rsync
 ```
 
 Create all of the temporary folders required:

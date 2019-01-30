@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.55 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.56 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -66,6 +66,15 @@ if [ -z "$rclone_binary" ]; then
 else
   if [ ! -f "$rclone_binary" ]; then
     rclone_binary=""
+  fi
+fi
+
+if [ -z "$rsync_binary" ]; then
+  rsync_binary=$(command -v rsync)
+  set_config "rsync_binary=\"\"" "rsync_binary=\"$rsync_binary\""
+else
+  if [ ! -f "$rsync_binary" ]; then
+    rsync_binary=""
   fi
 fi
 
@@ -448,8 +457,8 @@ function func_encode {
         fi
       else
         if [ -f "$line" ]; then
-          printf "\\e[34mCopying: $FILE\\e[0m"
-          /bin/rsync -ah --progress "$line" "$convert_dir"
+          printf "\\e[34mCopying: $FILE\\e[0m\\n"
+          $rsync_binary -ah --progress "$line" "$convert_dir"
           printf "\\n\\e[34mFile copied.\\e[0m\\n"
           file_exists=1
         else
@@ -565,11 +574,11 @@ function func_encode {
                 /bin/rm "$line"
                 printf "\\n\\e[34mOriginal file deleted.\\e[0m"
               else
-                /bin/rsync -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
+                $rsync_binary -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
                 printf "\\n\\e[93mForce overwrite is disabled, new filename = $NAME [Plexus Encode].$media_container\\e[0m"
               fi
-              printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m"
-              /bin/rsync -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$DIRP"
+              printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m\\n"
+              $rsync_binary -ah --progress --remove-source-files "$converted_dir/$NAME.$media_container" "$DIRP"
               printf "\\n\\e[34mFile successfully moved.\\e[0m"
             fi
             printf "\\n\\e[34mDeleting cached file and delisting it."
@@ -887,7 +896,12 @@ case "$command" in
       fi
       if [ -n "$list_file" ]; then
         if [ -n "$ffmpeg_binary" ]; then
-          func_encode
+          if [ -n "$rsync_binary" ]; then
+            func_encode
+          else
+            printf "\\e[31mPlease install rsync to use this command\\e[0m\\n"
+            exit 0
+          fi
         else
           printf "\\e[31mPlease install ffmpeg to use this command\\e[0m\\n"
           exit 0
