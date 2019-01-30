@@ -20,7 +20,7 @@ Install any missing dependencies (CentOS/Rhel):
 ``` shell
 sudo yum -q -y install epel-release
 sudo yum -q -y update && sudo yum -q -y upgrade
-sudo yum localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
+sudo yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
 sudo yum -q -y install curl ffmpeg ffmpeg-devel progress
 ```
 
