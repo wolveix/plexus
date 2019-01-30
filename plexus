@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.50 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.51 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -691,20 +691,28 @@ function func_list {
     EXT=${line##*.}
     FILE=${line##*/}
     NAME=${FILE%.*}
-    printf "\\e[94mScanning: $line\\n"
-  	file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
-  	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
-
-    if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ] || [ -n "$EXT" ]; then
-      if [ "$EXT" != "$media_container" ] || [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
+    if [ -f "$line" ]; then
+      printf "\\e[94mScanning: $line\\n"
+      if [ "$EXT" != "$media_container" ]; then
         printf "\\e[34mAdding: $line\\n"
         line=${line#"$mount_dir"}
         echo "$line" >> "$list_file"
+      else
+        file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+      	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+
+        if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ] || [ -n "$EXT" ]; then
+          if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
+            printf "\\e[34mAdding: $line\\n"
+            line=${line#"$mount_dir"}
+            echo "$line" >> "$list_file"
+          fi
+        fi
       fi
+      EXT=""
+      file_audio_codec=""
+      file_video_codec=""
     fi
-    EXT=""
-    file_audio_codec=""
-    file_video_codec=""
   done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp4' -or -name '*.ts' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
 }
