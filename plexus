@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.57 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.58 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -436,11 +436,19 @@ function func_encode {
       EXT=${line##*.}
       FILE=${line##*/}
       NAME=${FILE%.*}
+
+      if [ ! -d "$convert_dir/$NAME/" ]; then
+        /bin/mkdir "$convert_dir/$NAME/"
+      else
+        /bin/rm -r "$convert_dir/$NAME/"
+        /bin/mkdir "$convert_dir/$NAME/"
+      fi
+
       if [ "$remote_transfer" = true ]; then
         if [ -n "$rclone_remote" ]; then
           if [ -n "$rclone_binary" ]; then
             printf "Downloading: $FILE\\n"
-            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir" $rclone_bwlimit --stats-one-line -P
+            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" $rclone_bwlimit --stats-one-line -P
             then
               printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n\\n"
               /bin/sed -i 1d "$list_file"
@@ -458,7 +466,7 @@ function func_encode {
       else
         if [ -f "$line" ]; then
           printf "\\e[34mCopying: $FILE\\e[0m\\n"
-          $rsync_binary -ah --info=progress2 "$line" "$convert_dir"
+          $rsync_binary -ah --info=progress2 "$line" "$convert_dir/$NAME/"
           printf "\\n\\e[34mFile copied.\\e[0m\\n"
           file_exists=1
         else
@@ -466,38 +474,66 @@ function func_encode {
         fi
       fi
 
+      if [ "$force_overwrite" == true ]; then
+        FNAME="$NAME"
+      else
+        FNAME="$NAME [Plexus Encode]"
+        /bin/mv "$convert_dir/$NAME/$NAME.$EXT" "$convert_dir/$NAME/$FNAME.$EXT"
+      fi
+
       if [ $file_exists -eq 1 ]; then
-        exclude_stream=""
-        file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE"`
-        file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$FILE"`
-        stream_count=`$ffprobe_binary -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :`
-        if [ "$stream_count" -gt 0 ]; then
-          stream_id=`$ffprobe_binary -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$FILE" |& grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :`
-          if [ "$stream_count" = 1 ]; then
-            exclude_stream=$(echo "$stream_id" | grep -oP '0:[0-9]{1,3}')
-            exclude_stream="-map -$exclude_stream"
-          else
-            counter=0
-            until [ "$counter" = "$stream_count" ]
-            do
-              counter=$((counter+1))
-              excluded_stream="$(echo "$stream_id" |& grep -oP '0:[0-9]{1,3}' |& sed -n "${counter}"p)"
-              if [ -n "$excluded_stream" ]; then
-                if [ "$exclude_stream" = "*$excluded_stream*" ]; then
-                  counter="$stream_count"
-                else
-                  exclude_stream="$exclude_stream -map -$excluded_stream"
-                fi
-              fi
-              excluded_stream=""
-            done
+        if [ ! -d "$converted_dir/$NAME/" ]; then
+          /bin/mkdir "$converted_dir/$NAME/"
+        else
+          if [ -f "$converted_dir/$NAME/$FILE" ]; then
+            /bin/rm "$converted_dir/$NAME/$FILE"
           fi
         fi
-        printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
 
-        if [ -f "$converted_dir/$FILE" ]; then
-          /bin/rm "$converted_dir/$FILE"
+        exclude_stream=""
+        file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT"`
+        file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT"`
+        stream_info=$($ffprobe_binary -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$NAME/$FNAME.$EXT" 2>&1)
+        stream_count=`echo "$stream_info" |& grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :`
+        if [ "$stream_count" -gt 0 ]; then
+          stream_id=`echo "$stream_info" |& grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :`
+          counter=0
+          failcounter=0
+          printf "\\e[34mExtracting subtitles...\\n\\e[0m"
+          until [ "$counter" = "$stream_count" ]
+          do
+            counter=$((counter+1))
+            excluded_stream="$(echo "$stream_id" |& grep -oP '0:[0-9]{1,3}' |& sed -n "${counter}"p)"
+            subtitle_language="$(echo "$stream_id" |& grep -oP '\([a-z]{3}\)' |& sed -n "${counter}"p |& sed -e 's/(//' -e 's/)//')"
+            if [ -n "$excluded_stream" ]; then
+              if [ "$exclude_stream" = "*$excluded_stream*" ]; then
+                counter="$stream_count"
+              else
+                exclude_stream="$exclude_stream -map -$excluded_stream"
+                if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
+                  if [ -f "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.srt" ]; then
+                    /bin/rm "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
+                  fi
+                  if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
+                    if [ -f "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" ]; then
+                      /bin/rm "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"
+                    fi
+                    failcounter=$((failcounter+1))
+                  fi
+                fi
+              fi
+            fi
+            excluded_stream=""
+          done
+
+          if [ "$failcounter" -gt 0 ]; then
+            printf "\\e[91m$failcounter subtitle stream(s) could not be extracted.\\n\e[0m"
+          else
+            printf "\\e[34mSubtitles extracted successfully.\\n\\e[0m"
+          fi
         fi
+
+        printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
 
         if [ "$audio_codec" = "aac" ]; then
           if [ -n "`$ffmpeg_binary -encoders |& grep -i libfdk`" ]; then
@@ -530,14 +566,14 @@ function func_encode {
         fi
 
         encode_success=0
-        if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"; then
+        if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
           if [ "$codec_copy" = true ]; then
             printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
             if [ -n "$audio_codec" ]; then
               encode_audio_codec="$audio_codec"
             fi
 
-            if ! $ffmpeg_binary -y -i "$convert_dir/$FILE" -c:v $video_library -c:a $encode_audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME.$media_container"
+            if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -c:v $video_library -c:a $encode_audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
             then
               printf "$ffmpeg_error"
               encode_success=0
@@ -553,36 +589,30 @@ function func_encode {
         fi
 
         if [ $encode_success -eq 1 ]; then
-          printf "\\n\\e[92mFile successfully converted.\\e[0m"
-          if [ -f "$convert_dir/$FILE" ]; then
+          if [ -f "$convert_dir/$NAME/$FNAME.$media_container" ]; then
+            printf "\\n\\e[92mFile successfully converted.\\e[0m"
             if [ -n "$rclone_remote" ]; then
               if [ "$force_overwrite" = true ]; then
-                printf "\\n\\e[34mDeleting original file from RClone remote.\\e[0m"
-                $rclone_binary delete "$rclone_remote$line" $rclone_bwlimit --stats-one-line -P
-                printf "\\n\\e[34mOriginal file deleted.\\e[0m"
-              else
-                mv "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
-                NAME="$NAME [Plexus Encode]"
-                printf "\\nForce overwrite is disabled, new filename = $NAME.$media_container"
+                printf "\\n\\e[34mDeleting original file from RClone remote.\\n\\e[0m"
+                $rclone_binary delete "$rclone_remote$line" --stats-one-line -P
+                printf "\\e[34mOriginal file deleted.\\e[0m"
               fi
-              printf "\\n\\e[34mUploading converted file to RClone remote.\\e[0m"
-              $rclone_binary move "$converted_dir/$NAME.$media_container" "$rclone_remote$DIRP" $rclone_bwlimit --stats-one-line -P
-              printf "\\n\\e[34mFile successfully uploaded.\\e[0m"
+              printf "\\n\\e[34mUploading converted file to RClone remote.\\n\\e[0m"
+              $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
+              printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
+              exit 0
             else
               if [ "$force_overwrite" = true ]; then
                 printf "\\n\\e[34mDeleting original file.\\e[0m"
                 /bin/rm "$line"
                 printf "\\n\\e[34mOriginal file deleted.\\e[0m"
-              else
-                $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME.$media_container" "$converted_dir/$NAME [Plexus Encode].$media_container"
-                printf "\\n\\e[93mForce overwrite is disabled, new filename = $NAME [Plexus Encode].$media_container\\e[0m"
               fi
               printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m\\n"
-              $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME.$media_container" "$DIRP"
+              $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME/" "$DIRP"
               printf "\\n\\e[34mFile successfully moved.\\e[0m"
             fi
             printf "\\n\\e[34mDeleting cached file and delisting it."
-            /bin/rm "$convert_dir/$FILE"
+            /bin/rm -r "$convert_dir/$NAME"
             /bin/sed -i 1d "$list_file"
             printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n\\n"
           else
