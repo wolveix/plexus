@@ -600,7 +600,6 @@ function func_encode {
               printf "\\n\\e[34mUploading converted file to RClone remote.\\n\\e[0m"
               $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
               printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
-              exit 0
             else
               if [ "$force_overwrite" = true ]; then
                 printf "\\n\\e[34mDeleting original file.\\e[0m"
