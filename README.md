@@ -68,6 +68,11 @@ rsync_binary=""
 video_codec="h264"
 video_library="libx264"
 ```
+
+Simply put, this will find any files that are not MKV, with x264 video codec & aac audio codec. It will then place them into a temporary list, which it will use to convert only those files.
+
+Once those files are converted, they will be moved to their source directory and the original file will be purged.
+
 To change any values, either edit the file directly or run:
 ```
 sudo plexus config
