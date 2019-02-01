@@ -47,6 +47,35 @@ sudo chown root:root plexus
 sudo mv plexus /usr/bin/plexus
 ```
 
+### Default Configuration
+By default the config file is as shown below.
+```
+audio_codec="aac"
+convert_dir="$HOME/.plexus/encode/convert"
+converted_dir="$HOME/.plexus/encode/converted"
+ffmpeg_binary=""
+ffmpeg_threads="2"
+ffmpeg_preset="faster"
+ffprobe_binary=""
+force_overwrite="true"
+fusermount_binary=""
+list_file="$HOME/.plexus/list.txt"
+media_container="mkv"
+media_dir="/mnt/plexdrive"
+mount_dir=""
+rclone_binary=""
+rsync_binary=""
+video_codec="h264"
+video_library="libx264"
+```
+To change any values, either edit the file directly or run:
+```
+sudo plexus config
+```
+
+
+
+
 #### That's it!
 
 Plexus natively supports RClone and a custom build of FFmpeg. You can install any dependencies via Plexus' built-in install function.
