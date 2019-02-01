@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.58 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.59 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -455,7 +455,7 @@ function func_encode {
               echo "$line" >> "$list_file"
               file_exists=0
             else
-              printf "\\nFile downloaded."
+              printf "\\nFile downloaded.\\n"
               file_exists=1
             fi
           else
@@ -511,14 +511,16 @@ function func_encode {
               else
                 exclude_stream="$exclude_stream -map -$excluded_stream"
                 if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
-                  if [ -f "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.srt" ]; then
-                    /bin/rm "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
+                  if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt" ]; then
+                    /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
                   fi
                   if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
-                    if [ -f "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" ]; then
-                      /bin/rm "$convert_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"
+                    if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" ]; then
+                      /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"
                     fi
                     failcounter=$((failcounter+1))
+                  else
+                    /bin/mv "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
                   fi
                 fi
               fi
@@ -589,7 +591,7 @@ function func_encode {
         fi
 
         if [ $encode_success -eq 1 ]; then
-          if [ -f "$convert_dir/$NAME/$FNAME.$media_container" ]; then
+          if [ -f "$converted_dir/$NAME/$FNAME.$media_container" ]; then
             printf "\\n\\e[92mFile successfully converted.\\e[0m"
             if [ -n "$rclone_remote" ]; then
               if [ "$force_overwrite" = true ]; then
@@ -613,11 +615,11 @@ function func_encode {
             printf "\\n\\e[34mDeleting cached file and delisting it."
             /bin/rm -r "$convert_dir/$NAME"
             /bin/sed -i 1d "$list_file"
-            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n\\n"
+            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
           else
             printf "\\nFile codecs are already correct. Delisting it.\\n"
             /bin/sed -i 1d "$list_file"
-            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n\\n"
+            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
           fi
         else
           printf "\\n\\e[31mError: $line could not be encoded.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
