@@ -92,7 +92,7 @@ Run `plexus list -d /mount/path/path/to/media -m /mount/path` to start building 
 Once the list function has finished its process, you can begin the encoding process by running `plexus encode -l /path/to/list -r RCloneRemote:`.
 
 ### Support
-If you run into any issues, please [submit an issue via this repo](https://github.com/Wolveix/Plexus/issues/new). If the issue occurs during the encode command, please run the command again with the `--verbose` flag so that we may have a better idea of what's happening.
+If you run into any issues, please [submit an issue via this repo](https://github.com/Wolveix/Plexus/issues/new?assignees=&labels=&template=bug_report.md&title=). If the issue occurs during the encode command, please run the command again with the `--verbose` flag so that we may have a better idea of what's happening.
 
 ## Credits
 - Creator: Robert Thomas ([Wolveix](https://github.com/Wolveix))

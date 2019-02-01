@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.59 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.60 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -553,29 +553,29 @@ function func_encode {
           codec_copy=true
           codecs="$codecs -c:a copy"
         else
-          options="$codecs -c:a $audio_codec"
+          codecs="$codecs -c:a $audio_codec"
         fi
 
         if [ -z "$video_codec" ] || [ "$file_video_codec" == "$video_codec" ]; then
           codec_copy=true
-          codecs="-c:v copy"
+          codecs="$codecs -c:v copy"
         else
-          codecs="-c:v $video_library"
+          codecs="$codecs -c:v $video_library"
         fi
 
         if [ "$video_codec" == "h264" ]; then
-          options="-crf 20 -level 4.1 $options"
+          options="$options -crf 20 -level 4.1"
         fi
 
         encode_success=0
-        if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" $codecs $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
+        if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
           if [ "$codec_copy" = true ]; then
             printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
             if [ -n "$audio_codec" ]; then
               encode_audio_codec="$audio_codec"
             fi
 
-            if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -c:v $video_library -c:a $encode_audio_codec $options -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
+            if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
             then
               printf "$ffmpeg_error"
               encode_success=0
