@@ -82,6 +82,41 @@
                               <br>
                               <h3>That's it!</h3>
                               <p>Plexus natively supports RClone and a custom build of FFmpeg. You can install any dependencies via Plexus' built-in install function.</p>
+                              <br>
+                              <h3>Configuration</h3>
+                              <p>This is the default config file:</p>
+                              <p><code>audio_codec="aac"</code></p>
+                              <p><code>convert_dir="$HOME/.plexus/encode/convert"</code></p>
+                              <p><code>converted_dir="$HOME/.plexus/encode/converted"</code></p>
+                              <p><code>ffmpeg_binary=""</code></p>
+                              <p><code>ffmpeg_threads="2"</code></p>
+                              <p><code>ffmpeg_preset="faster"</code></p>
+                              <p><code>ffprobe_binary=""</code></p>
+                              <p><code>force_overwrite="true"</code></p>
+                              <p><code>fusermount_binary=""</code></p>
+                              <p><code>list_file="$HOME/.plexus/list.txt"</code></p>
+                              <p><code>media_container="mkv"</code></p>
+                              <p><code>media_dir="/mnt/plexdrive"</code></p>
+                              <p><code>mount_dir=""</code></p>
+                              <p><code>rclone_binary=""</code></p>
+                              <p><code>rsync_binary=""</code></p>
+                              <p><code>video_codec="h264"</code></p>
+                              <p><code>video_library="libx264"</code></p>
+                              <br>
+                              <p>Without changing any options, Plexus will create a list of your files that either don't use the MKV container, x264 video codec or the aac audio codec. You can then process this list by running the encode command which will move through the list and re-encode each file to fit the above three conditions.</p>
+                              <p>Original files are replaced by default, but you can disable this by changing the <code>force_overwrite</code> value to <code>false</code>. You can edit the config file directly (<code>$HOME/.config/plexus/plexus.conf</code>) or you can use the built-in config function by running <code>plexus config</code>.</p>
+                              <br>
+                              <h3>Usage</h3>
+                              <p>This somewhat varies depending on whether you're planning on encoding local media or media contained on an <a href="https://rclone.org/remote_setup/">RClone remote</a>. Firstly, specify your ideal codecs via the <code>config</code> function.</p>
+                              <h4>Local Media</h4>
+                              <p>Run <code>plexus list -d /path/to/media</code> to start building a recursive list of your media which needs to be re-encoded.</p>
+                              <p>Once the list function has finished its process, you can begin the encoding process by running <code>plexus encode -l /path/to/list</code>.</p>
+                              <h4>Remote Media</h4>
+                              <p>Run <code>plexus list -d /mount/path/path/to/media -m /mount/path</code> to start building a recursive list of your media which needs to be re-encoded.</p>
+                              <p>Once the list function has finished its process, you can begin the encoding process by running <code>plexus encode -l /path/to/list -r RCloneRemote:</code>.</p>
+                              <br>
+                              <h3>Support</h3>
+                              <p>If you run into any issues, please <a href="https://github.com/Wolveix/Plexus/issues/new">submit an issue via the repo</a>. If the issue occurs during the encode command, please run the command again with the <code>--verbose</code> flag so that we may have a better idea of what's happening.</p>
                            </div>
                         </section>
                      </div>

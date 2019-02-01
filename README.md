@@ -47,8 +47,13 @@ sudo chown root:root plexus
 sudo mv plexus /usr/bin/plexus
 ```
 
-### Default Configuration
-By default the config file is as shown below.
+#### That's it!
+
+Plexus natively supports RClone and a custom build of FFmpeg. You can install any dependencies via Plexus' built-in install function.
+
+### Configuration
+
+This is the default config file:
 ```
 audio_codec="aac"
 convert_dir="$HOME/.plexus/encode/convert"
@@ -69,21 +74,25 @@ video_codec="h264"
 video_library="libx264"
 ```
 
-Simply put, this will find any files that are not MKV, with x264 video codec & aac audio codec. It will then place them into a temporary list, which it will use to convert only those files.
+Without changing any options, Plexus will create a list of your files that either don't use the MKV container, x264 video codec or the aac audio codec. You can then process this list by running the encode command which will move through the list and re-encode each file to fit the above three conditions.
 
-Once those files are converted, they will be moved to their source directory and the original file will be purged.
+Original files are replaced by default, but you can disable this by changing the `force_overwrite` value to `false`. You can edit the config file directly (`$HOME/.config/plexus/plexus.conf`) or you can use the built-in config function by running `plexus config`.
 
-To change any values, either edit the file directly or run:
-```
-sudo plexus config
-```
+### Usage
+This somewhat varies depending on whether you're planning on encoding local media or media contained on an [RClone remote](https://rclone.org/remote_setup/). Firstly, specify your ideal codecs via the `config` function.
 
+#### Local Media
+Run `plexus list -d /path/to/media` to start building a recursive list of your media which needs to be re-encoded.
 
+Once the list function has finished its process, you can begin the encoding process by running `plexus encode -l /path/to/list`.
 
+#### Remote Media
+Run `plexus list -d /mount/path/path/to/media -m /mount/path` to start building a recursive list of your media which needs to be re-encoded.
 
-#### That's it!
+Once the list function has finished its process, you can begin the encoding process by running `plexus encode -l /path/to/list -r RCloneRemote:`.
 
-Plexus natively supports RClone and a custom build of FFmpeg. You can install any dependencies via Plexus' built-in install function.
+### Support
+If you run into any issues, please [submit an issue via this repo](https://github.com/Wolveix/Plexus/issues/new). If the issue occurs during the encode command, please run the command again with the `--verbose` flag so that we may have a better idea of what's happening.
 
 ## Credits
 - Creator: Robert Thomas ([Wolveix](https://github.com/Wolveix))
