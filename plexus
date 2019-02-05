@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.60 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.61 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -43,8 +43,12 @@ else
 fi
 
 if [ -z "$ffprobe_binary" ]; then
-  ffprobe_binary=$(command -v ffprobe)
-  set_config "ffprobe_binary=\"\"" "ffprobe_binary=\"$ffprobe_binary\""
+  if [ ! $(command -v ffprobe) ]; then
+    ffprobe_binary=""
+  else
+    ffprobe_binary=$(command -v ffprobe)
+    set_config "ffprobe_binary=\"\"" "ffprobe_binary=\"$ffprobe_binary\""
+  fi
 else
   if [ ! -f "$ffprobe_binary" ]; then
     ffprobe_binary=""
@@ -52,8 +56,12 @@ else
 fi
 
 if [ -z "$fusermount_binary" ]; then
-  fusermount_binary=$(command -v fusermount)
-  set_config "fusermount_binary=\"\"" "fusermount_binary=\"$fusermount_binary\""
+  if [ ! $(command -v fusermount) ]; then
+    fusermount_binary=""
+  else
+    fusermount_binary=$(command -v fusermount)
+    set_config "fusermount_binary=\"\"" "fusermount_binary=\"$fusermount_binary\""
+  fi
 else
   if [ ! -f "$fusermount_binary" ]; then
     fusermount_binary=""
@@ -61,8 +69,12 @@ else
 fi
 
 if [ -z "$rclone_binary" ]; then
-  rclone_binary=$(command -v rclone)
-  set_config "rclone_binary=\"\"" "rclone_binary=\"$rclone_binary\""
+  if [ ! $(command -v rclone) ]; then
+    rclone_binary=""
+  else
+    rclone_binary=$(command -v rclone)
+    set_config "rclone_binary=\"\"" "rclone_binary=\"$rclone_binary\""
+  fi
 else
   if [ ! -f "$rclone_binary" ]; then
     rclone_binary=""
@@ -70,8 +82,12 @@ else
 fi
 
 if [ -z "$rsync_binary" ]; then
-  rsync_binary=$(command -v rsync)
-  set_config "rsync_binary=\"\"" "rsync_binary=\"$rsync_binary\""
+  if [ ! $(command -v rsync) ]; then
+    rsync_binary=""
+  else
+    rsync_binary=$(command -v rsync)
+    set_config "rsync_binary=\"\"" "rsync_binary=\"$rsync_binary\""
+  fi
 else
   if [ ! -f "$rsync_binary" ]; then
     rsync_binary=""
