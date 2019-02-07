@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.61 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.62 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -139,10 +139,13 @@ function check_variable {
         "avi")
           media_container="avi"
           ;;
-        "mkv")
+        "matroska" | "mkv")
           media_container="mkv"
           ;;
-        "mp4")
+        "mp3" | "mpeg3")
+          media_container="mp3"
+          ;;
+        "mp4" | "mpeg4")
           media_container="mp4"
           ;;
         "wmv")

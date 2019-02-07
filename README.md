@@ -96,5 +96,5 @@ If you run into any issues, please [submit an issue via this repo](https://githu
 
 ## Credits
 - Creator: Robert Thomas ([Wolveix](https://github.com/Wolveix))
-- Help: [Greg P.](https://github.com/gorgarp), [Mason Rowe](https://github.com/MasonR)
+- Help: [Greg Probst](https://github.com/gorgarp), [Mason Rowe](https://github.com/MasonR)
 - License: [GNU General Public License v3.0](https://github.com/Wolveix/Plexus/blob/master/LICENSE)
