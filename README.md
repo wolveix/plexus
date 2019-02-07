@@ -95,6 +95,6 @@ Once the list function has finished its process, you can begin the encoding proc
 If you run into any issues, please [submit an issue via this repo](https://github.com/Wolveix/Plexus/issues/new?assignees=&labels=&template=bug_report.md&title=). If the issue occurs during the encode command, please run the command again with the `--verbose` flag so that we may have a better idea of what's happening.
 
 ## Credits
-- Creator: Robert Thomas ([Wolveix](https://github.com/Wolveix))
+- Creator: [Robert Thomas](https://github.com/Wolveix)
 - Help: [Greg Probst](https://github.com/gorgarp), [Mason Rowe](https://github.com/MasonR)
 - License: [GNU General Public License v3.0](https://github.com/Wolveix/Plexus/blob/master/LICENSE)

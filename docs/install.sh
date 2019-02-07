@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.62 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.63 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
 case $distro in
