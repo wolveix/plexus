@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.63 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.64 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -175,6 +175,22 @@ function check_variable {
           ;;
       esac
       ;;
+    "hardware")
+      case ${2,,} in
+        "cuvid")
+          hardware_codec="cuvid"
+          ;;
+        "" | "default" | "opencl")
+          hardware_codec="opencl"
+          ;;
+        "nvdec")
+          hardware_codec="nvdec"
+          ;;
+        *)
+          hardware_codec="null"
+          ;;
+      esac
+      ;;
     "video")
       case ${2,,} in
         "" | "default" | "x264" | "h.264" | "h264" | "avc" | "libx264")
@@ -249,6 +265,24 @@ function prompt_user {
               answer=""
             fi
             ;;
+          "hardware")
+            check_variable "hardware" "$answer"
+            if [ "$hardware_codec" == "null" ]; then
+              printf "\\nYou must enter a valid codec.\\n"
+              answer=""
+            fi
+            ;;
+          "truth")
+            if [ "$answer" != "true" ]; then
+              if [ "$answer" != "false" ]; then
+                lock=0
+              else
+                lock=1
+              fi
+            else
+              lock=1
+            fi
+            ;;
           "video")
             check_variable "video" "$answer"
             if [ "$video_codec" == "null" ]; then
@@ -265,17 +299,17 @@ function prompt_user {
 }
 
 function func_about {
-    printf "\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with RClone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Managing Director & Lead Software Developer at Arcruy.\\n  https://github.com/Wolveix/Plexus\\n"
+    printf "\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with Rclone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Managing Director & Lead Software Developer at Arcruy.\\n  https://github.com/Wolveix/Plexus\\n"
 }
 
 function func_config {
   printf "\\nWhat config menu would you like to access?\\n"
-  select option in "Binaries" "Codecs" "Directories" "FFmpeg" "Exit"
+  select option in "Binaries (FFprobe, FFmpeg, Rclone)" "Codecs (Audio, Container, Video)" "Directories (Convert, Converted, Media, Mount)" "FFmpeg (CPU, Force Overwrite, Hardware Acceleration, Preset)" "Exit"
   do
     case "$option" in
-      "Binaries")
+      "Binaries (FFprobe, FFmpeg, Rclone)")
         printf "\\nWhich binary do you want to set?\\n"
-        select option in "FFprobe" "FFmpeg" "RClone" "Exit"
+        select option in "FFprobe" "FFmpeg" "Rclone" "Exit"
         do
           case "$option" in
             "FFprobe")
@@ -292,11 +326,11 @@ function func_config {
               printf "\\nFFmpeg binary successfully changed.\\n"
               exit 0
               ;;
-            "RClone")
-              printf "\\n\\nWhat do you want to set the RClone binary to?\\n"
+            "Rclone")
+              printf "\\n\\nWhat do you want to set the Rclone binary to?\\n"
               prompt_user "file"
               set_config "rclone_binary=\"$rclone_binary\"" "rclone_binary=\"$answer\""
-              printf "\\nRClone binary successfully changed.\\n"
+              printf "\\nRclone binary successfully changed.\\n"
               exit 0
               ;;
             "Exit")
@@ -306,7 +340,7 @@ function func_config {
           esac
         done
         ;;
-      "Codecs")
+      "Codecs (Audio, Container, Video)")
         printf "\\nWhich codec do you want to set?\\n"
         select option in "Audio" "Container" "Video" "Exit"
         do
@@ -344,7 +378,7 @@ function func_config {
           esac
         done
         ;;
-      "Directories")
+      "Directories (Convert, Converted, Media, Mount)")
         printf "\\nWhich directory do you want to set?\\n"
         select option in "Convert" "Converted" "Media" "Mount" "Exit"
         do
@@ -384,9 +418,9 @@ function func_config {
           esac
         done
         ;;
-      "FFmpeg")
+      "FFmpeg (CPU, Force Overwrite, Hardware Acceleration, Preset)")
         printf "\\nWhich option do you want to set?\\n"
-        select option in "CPU" "Force Overwrite" "Preset" "Exit"
+        select option in "CPU" "Force Overwrite" "Hardware Acceleration" "Preset" "Exit"
         do
           case "$option" in
             "CPU")
@@ -402,12 +436,44 @@ function func_config {
             "Force Overwrite")
               printf "\\n\\nEnter true or false: "
 
-              while [ "$answer" != false ] || [ "$answer" != true ]; do
-                prompt_user
+              lock=0
+              while [ "$lock" -eq 0 ]; do
+                prompt_user "truth"
               done
-              set_config "force_overwrite=\"$force_overwrite\"" "force_overwrite=\"$anaswer\""
+              set_config "force_overwrite=\"$force_overwrite\"" "force_overwrite=\"$answer\""
               printf "\\nForce overwrite successfully set.\\n"
               exit 0
+              ;;
+            "Hardware Acceleration")
+              printf "\\nWhich option do you want to set?\\n"
+              select option in "Codec" "Enabled" "Exit"
+              do
+                case "$option" in
+                  "Codec")
+                    printf "\\n\\nWhat do you want to set the hardware codec to?\\n"
+                    var=$hardware_codec
+                    prompt_user "hardware"
+                    set_config "hardware_codec=\"$var\"" "hardware_codec=\"$hardware_codec\""
+                    printf "\\nHardware codec successfully changed.\\n"
+                    exit 0
+                    ;;
+                  "Enabled")
+                    printf "\\n\\nEnter true or false: "
+
+                    lock=0
+                    while [ "$lock" -eq 0 ]; do
+                      prompt_user "truth"
+                    done
+                    set_config "hardware_acceleration=\"$hardware_acceleration\"" "hardware_acceleration=\"$answer\""
+                    printf "\\nHardware Acceleration successfully set.\\n"
+                    exit 0
+                    ;;
+                  "Exit")
+                    printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                    exit 0
+                    ;;
+                esac
+              done
               ;;
             "Preset")
               printf "\\n\\nEnter the desired FFmpeg preset: \\n"
@@ -484,7 +550,7 @@ function func_encode {
               file_exists=1
             fi
           else
-            printf "\\e[31mPlease install RClone to use an RClone remote with this command\\e[0m\\n"
+            printf "\\e[31mPlease install Rclone to use an Rclone remote with this command\\e[0m\\n"
             exit 0
           fi
         fi
@@ -581,6 +647,10 @@ function func_encode {
           codecs="$codecs -c:a $audio_codec"
         fi
 
+        if [ "$hardware_acceleration" = "true" ]; then
+          options="$options -hwaccel $hardware_codec"
+        fi
+
         if [ -z "$video_codec" ] || [ "$file_video_codec" == "$video_codec" ]; then
           codec_copy=true
           codecs="$codecs -c:v copy"
@@ -620,11 +690,11 @@ function func_encode {
             printf "\\n\\e[92mFile successfully converted.\\e[0m"
             if [ -n "$rclone_remote" ]; then
               if [ "$force_overwrite" = true ]; then
-                printf "\\n\\e[34mDeleting original file from RClone remote.\\n\\e[0m"
+                printf "\\n\\e[34mDeleting original file from Rclone remote.\\n\\e[0m"
                 $rclone_binary delete "$rclone_remote$line" --stats-one-line -P
                 printf "\\e[34mOriginal file deleted.\\e[0m"
               fi
-              printf "\\n\\e[34mUploading converted file to RClone remote.\\n\\e[0m"
+              printf "\\n\\e[34mUploading converted file to Rclone remote.\\n\\e[0m"
               $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
               printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
             else
@@ -661,7 +731,7 @@ function func_encode {
 }
 
 function func_help {
-    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an RClone remote or cache, set from the config function\\n  unmount         Unmount an RClone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n"
+    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an Rclone remote or cache, set from the config function\\n  unmount         Unmount an Rclone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n"
 }
 
 function func_install {
@@ -671,7 +741,7 @@ function func_install {
     case "$option" in
       "Install missing dependencies")
         printf "\\nWhich dependency?\\n"
-        select option in "All" "FFmpeg" "FFmpeg (custom)" "Fuse" "RClone" "Exit"
+        select option in "All" "FFmpeg" "FFmpeg (custom)" "Fuse" "Rclone" "Exit"
         do
           case "$option" in
             "All")
@@ -716,8 +786,8 @@ function func_install {
               printf "\\e[32mFuse has been installed!\\e[0m\\n"
               exit 0
               ;;
-            "RClone")
-              printf "\\n\\e[36mInstalling RClone.\\n\\n\\e[0m"
+            "Rclone")
+              printf "\\n\\e[36mInstalling Rclone.\\n\\n\\e[0m"
               $packages install curl unzip
               curl https://rclone.org/install.sh 2>/dev/null | sudo bash
               exit 0
@@ -811,20 +881,20 @@ function func_list {
 }
 
 function func_mount {
-  printf "\\e[36mMounting RClone remote to $media_dir\\n\\e[0m"
+  printf "\\e[36mMounting Rclone remote to $media_dir\\n\\e[0m"
   if ! $rclone_binary mount "$rclone_remote" "$media_dir" --allow-other --buffer-size 256M --dir-cache-time 72h --drive-chunk-size 32M --log-level INFO --log-file "$HOME"/.plexus/logs/rclone.log --timeout 1h --umask 002 --vfs-read-chunk-size 128M --vfs-read-chunk-size-limit off &
   then
     printf "\\nAn uknown error occurred (does the remote exist?)\\n\\e[0m"
   else
-    printf "\\n\\e[32mThe RClone remote has successfully been mounted!\\n\\e[0m"
+    printf "\\n\\e[32mThe Rclone remote has successfully been mounted!\\n\\e[0m"
   fi
 }
 
 function func_unmount {
   if [ -d "$media_dir" ]; then
-    printf "\\e[36mUnmounting RClone remote from $media_dir\\n\\e[0m"
+    printf "\\e[36mUnmounting Rclone remote from $media_dir\\n\\e[0m"
     fusermount -uz "$media_dir"
-    printf "\\n\\e[32mThe RClone remote has successfully been unmounted!\\n\\e[0m"
+    printf "\\n\\e[32mThe Rclone remote has successfully been unmounted!\\n\\e[0m"
   else
     printf "\\e[31mThe directory does not exist.\\n\\e[0m"
   fi
@@ -931,6 +1001,9 @@ case "$command" in
               "bwlimit"*)
                 rclone_bwlimit="$val"
                 ;;
+              "hwaccel"*)
+                hardware_acceleration="true"
+                ;;
               "verbose"*)
                 verbose="true"
                 ;;
@@ -947,7 +1020,7 @@ case "$command" in
         esac
       done
       if [ $OPTIND -eq 1 ]; then
-        printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              RClone remote. Use this for RClone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit RClone's active connection speed\\n  --verbose       Show detailed log\\n"
+        printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              Rclone remote. Use this for Rclone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit Rclone's active connection speed\\n  --hwaccel       Enabled hardware acceleration. Default = $hardware_acceleration\\n  --verbose       Show detailed log\\n"
         exit 0
       fi
       if [ -n "$list_file" ]; then
@@ -973,7 +1046,7 @@ case "$command" in
         printf "This command tells you more about it's creation.\\n"
         ;;
       "encode")
-        printf "\n\\e[39mAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RCloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -f              Force overwrite. Default = $force_overwrite\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = $list_file\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              RClone remote. Use this for RClone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured RClone\\n                  remote\\n\\n  -v              Video codec. Default = $video_codec\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit RClone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when expriencing issues\\n"
+        printf "\n\\e[39mAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -f              Force overwrite. Default = $force_overwrite\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = $list_file\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              Rclone remote. Use this for Rclone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured Rclone\\n                  remote\\n\\n  -v              Video codec. Default = $video_codec\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit Rclone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when expriencing issues\\n"
         ;;
       *)
         func_help
@@ -1070,7 +1143,7 @@ case "$command" in
       esac
     done
     if [ $OPTIND -eq 1 ]; then
-      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for RClone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
+      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for Rclone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
       exit 0
     fi
     func_list
@@ -1099,7 +1172,7 @@ case "$command" in
           esac
         done
         if [ $OPTIND -eq 1 ]; then
-          printf "\\e[39mUsage:\\n  plexus mount -r RCloneRemote:\\n\\nFlags:\\n  -r              RClone remote. Setup via rclone config\\n"
+          printf "\\e[39mUsage:\\n  plexus mount -r RcloneRemote:\\n\\nFlags:\\n  -r              Rclone remote. Setup via rclone config\\n"
           exit 0
         fi
         func_mount
