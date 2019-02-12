@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.64 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.65 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -528,11 +528,13 @@ function func_encode {
       FILE=${line##*/}
       NAME=${FILE%.*}
 
-      if [ ! -d "$convert_dir/$NAME/" ]; then
-        /bin/mkdir "$convert_dir/$NAME/"
-      else
-        /bin/rm -r "$convert_dir/$NAME/"
-        /bin/mkdir "$convert_dir/$NAME/"
+      if [ -z "$media_container" ]; then
+        media_container=$EXT;
+      fi
+
+      if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
+        /bin/rm -rf "$convert_dir" "$converted_dir"
+        /bin/mkdir -p "$convert_dir/$NAME/" "$converted_dir"
       fi
 
       if [ "$remote_transfer" = true ]; then
@@ -541,7 +543,7 @@ function func_encode {
             printf "Downloading: $FILE\\n"
             if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" $rclone_bwlimit --stats-one-line -P
             then
-              printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n\\n"
+              printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n"
               /bin/sed -i 1d "$list_file"
               echo "$line" >> "$list_file"
               file_exists=0
@@ -856,7 +858,7 @@ function func_list {
     NAME=${FILE%.*}
     if [ -f "$line" ]; then
       printf "\\e[94mScanning: $line\\n"
-      if [ "$EXT" != "$media_container" ]; then
+      if [ -n "$media_container" ] && [ "$EXT" != "$media_container" ]; then
         printf "\\e[34mAdding: $line\\n"
         line=${line#"$mount_dir"}
         echo "$line" >> "$list_file"
@@ -921,8 +923,8 @@ case "$command" in
         case $opt in
           a)
             if [ -z ${OPTARG,,} ]; then
-              if [ -z "$video_codec" ]; then
-                printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+              if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
+                printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                 exit 0
               else
                 printf "\\n\\e[93mYou've specified no audio codec, enabling video-only mode"
@@ -938,7 +940,14 @@ case "$command" in
             fi
             ;;
           c)
-            if [ -n "${OPTARG,,}" ]; then
+            if [ -z ${OPTARG,,} ]; then
+              if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
+                printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
+                exit 0
+              else
+                media_container=""
+              fi
+            else
               check_variable container "${OPTARG,,}"
               if [ $media_container = "null" ]; then
                 printf "You have not entered a supported media container.\\n"
@@ -980,8 +989,8 @@ case "$command" in
             ;;
           v)
             if [ -z ${OPTARG,,} ]; then
-              if [ -z "$audio_codec" ]; then
-                printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+              if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
+                printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                 exit 0
               else
                 printf "\\n\\e[93mYou've specified no video codec, enabling audio-only mode"
@@ -1061,16 +1070,17 @@ case "$command" in
     while getopts ":a:c:d:l:m:v:" opt; do
       case $opt in
         a)
-          if [ -z "${OPTARG,,}" ]; then
-            if [ -z "$video_codec" ]; then
-              printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+          if [ -z ${OPTARG,,} ]; then
+            if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
+              printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
               exit 0
             else
               printf "\\n\\e[93mYou've specified no audio codec, enabling video-only mode"
+              encode_audio_codec="$audio_codec"
               audio_codec=""
             fi
           else
-            check_variable audio "${OPTARG,,}"
+            check_variable audio ${OPTARG,,}
             if [ $audio_codec = "null" ]; then
               printf "You have not entered a supported audio codec.\\n"
               exit 0
@@ -1078,7 +1088,14 @@ case "$command" in
           fi
           ;;
         c)
-          if [ -n "${OPTARG,,}" ]; then
+          if [ -z ${OPTARG,,} ]; then
+            if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
+              printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
+              exit 0
+            else
+              media_container=""
+            fi
+          else
             check_variable container "${OPTARG,,}"
             if [ $media_container = "null" ]; then
               printf "You have not entered a supported media container.\\n"
@@ -1116,16 +1133,16 @@ case "$command" in
           fi
           ;;
         v)
-          if [ -z "${OPTARG,,}" ]; then
-            if [ -z "$audio_codec" ]; then
-              printf "\\n\\e[31mYou've specified no audio or video codec, please specify at least one\\n"
+          if [ -z ${OPTARG,,} ]; then
+            if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
+              printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
               exit 0
             else
               printf "\\n\\e[93mYou've specified no video codec, enabling audio-only mode"
               video_codec=""
             fi
           else
-            check_variable video "${OPTARG,,}"
+            check_variable video ${OPTARG,,}
             if [ $video_codec = "null" ]; then
               printf "You have not entered a supported video codec.\\n"
               exit 0
