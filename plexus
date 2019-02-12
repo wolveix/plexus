@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.65 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.66 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -534,8 +534,8 @@ function func_encode {
 
       if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
         /bin/rm -rf "$convert_dir" "$converted_dir"
-        /bin/mkdir -p "$convert_dir/$NAME/" "$converted_dir"
       fi
+      /bin/mkdir -p "$convert_dir/$NAME/" "$converted_dir"
 
       if [ "$remote_transfer" = true ]; then
         if [ -n "$rclone_remote" ]; then
@@ -720,6 +720,9 @@ function func_encode {
           fi
         else
           printf "\\n\\e[31mError: $line could not be encoded.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
+          if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
+            /bin/rm -rf "$convert_dir" "$converted_dir"
+          fi
           /bin/sed -i 1d "$list_file"
           echo "$line" >> "$list_file"
         fi
