@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.68 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.69 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -183,7 +183,7 @@ function check_variable {
         "" | "default" | "opencl")
           hardware_codec="opencl"
           ;;
-        "nvdec")
+        "qsv")
           hardware_codec="qsv"
           ;;
         "nvdec")
