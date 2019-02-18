@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.67 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.68 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -18,7 +18,7 @@ case $distro in
   '"CentOS Linux"')
     packages="yum -q -y"
     ;;
-  '"Debian GNU/Linux"' | '"Ubuntu"')
+  '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
     packages="apt-get -qq -y"
     ;;
   *)
@@ -182,6 +182,9 @@ function check_variable {
           ;;
         "" | "default" | "opencl")
           hardware_codec="opencl"
+          ;;
+        "nvdec")
+          hardware_codec="qsv"
           ;;
         "nvdec")
           hardware_codec="nvdec"
