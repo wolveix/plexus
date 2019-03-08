@@ -733,6 +733,16 @@ function func_encode {
             echo "$line" >> "$list_file"
           fi
         fi
+
+        if [ -n "$rclone_remote" ]; then
+          printf "\\n\\e[34mUploading subtitles Rclone remote.\\n\\e[0m"
+          $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
+          printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
+        else
+          printf "\\n\\e[34mMoving subtitles to the correct location.\\e[0m\\n"
+          $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME/" "$DIRP"
+          printf "\\n\\e[34mFile successfully moved.\\e[0m"
+        fi
         /bin/sed -i 1d "$list_file"
         echo "$line" >> "$list_file"
       else
