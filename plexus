@@ -733,6 +733,8 @@ function func_encode {
             echo "$line" >> "$list_file"
           fi
         fi
+        /bin/sed -i 1d "$list_file"
+        echo "$line" >> "$list_file"
       else
         printf "\\n\\e[31mError: $line does not exist.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
         /bin/sed -i 1d "$list_file"
