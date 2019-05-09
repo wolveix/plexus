@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.70 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.69 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -631,120 +631,106 @@ function func_encode {
           fi
         fi
 
-        if [ "$subtitles_only" != "true" ]; then
-          printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
+        printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
 
-          if [ "$audio_codec" = "aac" ]; then
-            if [ -n "`$ffmpeg_binary -encoders |& grep -i libfdk`" ]; then
-              audio_codec="libfdk_aac"
-              ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\n"
-            else
-              ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\nConsider installing the custom build of FFmpeg via the install command.\\n"
+        if [ "$audio_codec" = "aac" ]; then
+          if [ -n "`$ffmpeg_binary -encoders |& grep -i libfdk`" ]; then
+            audio_codec="libfdk_aac"
+            ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\n"
+          else
+            ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\nConsider installing the custom build of FFmpeg via the install command.\\n"
+          fi
+        fi
+
+        codec_copy=false
+        codecs=""
+        options="-map 0 $exclude_stream -preset $ffmpeg_preset -max_muxing_queue_size 1024 -movflags faststart -threads 2"
+        if [ -z "$audio_codec" ] || [ "$file_audio_codec" == "$audio_codec" ]; then
+          codec_copy=true
+          codecs="$codecs -c:a copy"
+        else
+          codecs="$codecs -c:a $audio_codec"
+        fi
+
+        if [ "$hardware_acceleration" = "true" ]; then
+          hwaccel="-hwaccel $hardware_codec"
+        else
+          hwaccel=""
+        fi
+
+        if [ -z "$video_codec" ] || [ "$file_video_codec" == "$video_codec" ]; then
+          codec_copy=true
+          codecs="$codecs -c:v copy"
+        else
+          codecs="$codecs -c:v $video_library"
+        fi
+
+        if [ "$video_codec" == "h264" ]; then
+          options="$options -crf 20 -level 4.1"
+        fi
+
+        encode_success=0
+        if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
+          if [ "$codec_copy" = true ]; then
+            printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
+            if [ -n "$audio_codec" ]; then
+              encode_audio_codec="$audio_codec"
             fi
-          fi
 
-          codec_copy=false
-          codecs=""
-          options="-map 0 $exclude_stream -preset $ffmpeg_preset -max_muxing_queue_size 1024 -movflags faststart -threads 2"
-          if [ -z "$audio_codec" ] || [ "$file_audio_codec" == "$audio_codec" ]; then
-            codec_copy=true
-            codecs="$codecs -c:a copy"
-          else
-            codecs="$codecs -c:a $audio_codec"
-          fi
-
-          if [ "$hardware_acceleration" = "true" ]; then
-            hwaccel="-hwaccel $hardware_codec"
-          else
-            hwaccel=""
-          fi
-
-          if [ -z "$video_codec" ] || [ "$file_video_codec" == "$video_codec" ]; then
-            codec_copy=true
-            codecs="$codecs -c:v copy"
-          else
-            codecs="$codecs -c:v $video_library"
-          fi
-
-          if [ "$video_codec" == "h264" ]; then
-            options="$options -crf 20 -level 4.1"
-          fi
-
-          encode_success=0
-          if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
-            if [ "$codec_copy" = true ]; then
-              printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
-              if [ -n "$audio_codec" ]; then
-                encode_audio_codec="$audio_codec"
-              fi
-
-              if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
-              then
-                printf "$ffmpeg_error"
-                encode_success=0
-              else
-                encode_success=1
-              fi
-            else
+            if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
+            then
               printf "$ffmpeg_error"
               encode_success=0
-            fi
-          else
-            encode_success=1
-          fi
-
-          if [ $encode_success -eq 1 ]; then
-            if [ -f "$converted_dir/$NAME/$FNAME.$media_container" ]; then
-              printf "\\n\\e[92mFile successfully converted.\\e[0m"
-              if [ -n "$rclone_remote" ]; then
-                if [ "$force_overwrite" = true ]; then
-                  printf "\\n\\e[34mDeleting original file from Rclone remote.\\n\\e[0m"
-                  $rclone_binary delete "$rclone_remote$line" --stats-one-line -P
-                  printf "\\e[34mOriginal file deleted.\\e[0m"
-                fi
-                printf "\\n\\e[34mUploading converted file to Rclone remote.\\n\\e[0m"
-                $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
-                printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
-              else
-                if [ "$force_overwrite" = true ]; then
-                  printf "\\n\\e[34mDeleting original file.\\e[0m"
-                  /bin/rm "$line"
-                  printf "\\n\\e[34mOriginal file deleted.\\e[0m"
-                fi
-                printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m\\n"
-                $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME/" "$DIRP"
-                printf "\\n\\e[34mFile successfully moved.\\e[0m"
-              fi
-              printf "\\n\\e[34mDeleting cached file and delisting it."
-              /bin/rm -r "$convert_dir/$NAME"
-              /bin/sed -i 1d "$list_file"
-              printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
             else
-              printf "\\nFile codecs are already correct. Delisting it.\\n"
-              /bin/sed -i 1d "$list_file"
-              printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
+              encode_success=1
             fi
           else
-            printf "\\n\\e[31mError: $line could not be encoded.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
-            if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
-              /bin/rm -rf "$convert_dir" "$converted_dir"
-            fi
-            /bin/sed -i 1d "$list_file"
-            echo "$line" >> "$list_file"
+            printf "$ffmpeg_error"
+            encode_success=0
           fi
+        else
+          encode_success=1
         fi
 
-        if [ -n "$rclone_remote" ]; then
-          printf "\\n\\e[34mUploading subtitles Rclone remote.\\n\\e[0m"
-          $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
-          printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
+        if [ $encode_success -eq 1 ]; then
+          if [ -f "$converted_dir/$NAME/$FNAME.$media_container" ]; then
+            printf "\\n\\e[92mFile successfully converted.\\e[0m"
+            if [ -n "$rclone_remote" ]; then
+              if [ "$force_overwrite" = true ]; then
+                printf "\\n\\e[34mDeleting original file from Rclone remote.\\n\\e[0m"
+                $rclone_binary delete "$rclone_remote$line" --stats-one-line -P
+                printf "\\e[34mOriginal file deleted.\\e[0m"
+              fi
+              printf "\\n\\e[34mUploading converted file to Rclone remote.\\n\\e[0m"
+              $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
+              printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
+            else
+              if [ "$force_overwrite" = true ]; then
+                printf "\\n\\e[34mDeleting original file.\\e[0m"
+                /bin/rm "$line"
+                printf "\\n\\e[34mOriginal file deleted.\\e[0m"
+              fi
+              printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m\\n"
+              $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME/" "$DIRP"
+              printf "\\n\\e[34mFile successfully moved.\\e[0m"
+            fi
+            printf "\\n\\e[34mDeleting cached file and delisting it."
+            /bin/rm -r "$convert_dir/$NAME"
+            /bin/sed -i 1d "$list_file"
+            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
+          else
+            printf "\\nFile codecs are already correct. Delisting it.\\n"
+            /bin/sed -i 1d "$list_file"
+            printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
+          fi
         else
-          printf "\\n\\e[34mMoving subtitles to the correct location.\\e[0m\\n"
-          $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME/" "$DIRP"
-          printf "\\n\\e[34mFile successfully moved.\\e[0m"
+          printf "\\n\\e[31mError: $line could not be encoded.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
+          if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
+            /bin/rm -rf "$convert_dir" "$converted_dir"
+          fi
+          /bin/sed -i 1d "$list_file"
+          echo "$line" >> "$list_file"
         fi
-        /bin/sed -i 1d "$list_file"
-        echo "$line" >> "$list_file"
       else
         printf "\\n\\e[31mError: $line does not exist.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
         /bin/sed -i 1d "$list_file"
@@ -1035,9 +1021,6 @@ case "$command" in
               "hwaccel"*)
                 hardware_acceleration="true"
                 ;;
-              "subtitles"*)
-                subtitles_only="true"
-                ;;
               "verbose"*)
                 verbose="true"
                 ;;
@@ -1054,7 +1037,7 @@ case "$command" in
         esac
       done
       if [ $OPTIND -eq 1 ]; then
-        printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              Rclone remote. Use this for Rclone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit Rclone's active connection speed\\n  --hwaccel       Enabled hardware acceleration. Default = $hardware_acceleration\\n  --subtitles     Enables subtitles only.\\n  --verbose       Show detailed log\\n"
+        printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              Rclone remote. Use this for Rclone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit Rclone's active connection speed\\n  --hwaccel       Enabled hardware acceleration. Default = $hardware_acceleration\\n  --verbose       Show detailed log\\n"
         exit 0
       fi
       if [ -n "$list_file" ]; then
