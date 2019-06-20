@@ -8,6 +8,11 @@ You can automatically install Plexus by running the following line via a support
 curl https://plexus.robt.me/install.sh | sudo bash
 ```
 
+If you don't have superuser priviledges or are using macOS, use this instead:
+``` shell
+curl https://plexus.robt.me/install.sh | bash
+```
+
 ### Manual
 Alternatively, you can manually install Plexus to a custom location on your device. You should install sudo if it doesn't already exist on your system.
 Install any missing dependencies (Debian/Ubuntu):
@@ -26,8 +31,8 @@ sudo yum -q -y install curl ffmpeg ffmpeg-devel rsync
 
 Install any missing dependencies (macOS):
 ``` shell
-sudo brew update && sudo brew upgrade
-sudo brew install curl ffmpeg rsync
+brew update && brew upgrade
+brew install curl ffmpeg rsync
 ```
 
 Create all of the temporary folders required:
