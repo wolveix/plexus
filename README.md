@@ -67,6 +67,7 @@ Plexus natively supports RClone and a custom build of FFmpeg. You can install an
 This is the default config file:
 ```
 audio_codec="aac"
+blacklist_file="$HOME/.plexus/blacklist"
 convert_dir="$HOME/.plexus/encode/convert"
 converted_dir="$HOME/.plexus/encode/converted"
 ffmpeg_binary=""
