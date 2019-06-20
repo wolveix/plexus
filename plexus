@@ -32,10 +32,10 @@ case "$OS" in
     ;;
 esac
 case $distro in
-  'CentOS Linux')
+  '"CentOS Linux"')
     packages="yum -q -y"
     ;;
-  'Debian GNU/Linux' | 'Linux Mint' | 'Ubuntu')
+  '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
     packages="apt-get -qq -y"
     ;;
   'macOS')
@@ -778,7 +778,7 @@ function func_encode {
 }
 
 function func_help {
-    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an Rclone remote or cache, set from the config function\\n  unmount         Unmount an Rclone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n"
+    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  blacklist       Add an entry to the blacklist\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an Rclone remote or cache, set from the config function\\n  unmount         Unmount an Rclone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n"
 }
 
 function func_install {

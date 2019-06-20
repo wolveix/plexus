@@ -20,14 +20,14 @@ case "$OS" in
     ;;
 esac
 case $distro in
-  'CentOS Linux')
+  '"CentOS Linux"')
     printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
     yum -q -y install epel-release
     yum -q -y update && yum -q -y upgrade
     yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
     yum -q -y install curl ffmpeg ffmpeg-devel rsync
     ;;
-  'Debian GNU/Linux' | 'Linux Mint' | 'Ubuntu')
+  '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
     printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
     apt-get -qq -y update && apt-get -qq -y upgrade
     apt-get -qq -y install curl ffmpeg rsync
