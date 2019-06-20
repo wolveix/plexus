@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.69 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.70 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -13,13 +13,38 @@ else
   mv plexus.conf "$HOME"/.config/plexus/
   printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
 fi
-distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
+OS="`uname`"
+case "$OS" in
+  'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
+    if [ ! -f "/etc/os-release" ]; then
+      printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+      exit
+    else
+      distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
+    fi
+    ;;
+  'Darwin')
+    distro='macOS'
+    ;;
+  *)
+    printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+    exit
+    ;;
+esac
 case $distro in
-  '"CentOS Linux"')
+  'CentOS Linux')
     packages="yum -q -y"
     ;;
-  '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
+  'Debian GNU/Linux' | 'Linux Mint' | 'Ubuntu')
     packages="apt-get -qq -y"
+    ;;
+  'macOS')
+    if [ $(command -v brew) ]; then
+      printf "\\nIt doesn't look like you have brew installed.\\nFind out more here: https://brew.sh/.\\n"
+      exit
+    else
+      packages=$(command -v brew)
+    fi
     ;;
   *)
     printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
@@ -303,6 +328,18 @@ function prompt_user {
 
 function func_about {
     printf "\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with Rclone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Managing Director & Lead Software Developer at Arcruy.\\n  https://github.com/Wolveix/Plexus\\n"
+}
+
+function func_blacklist {
+  if grep -Fxq "$file" "$blacklist_file"; then
+    printf "\\e[94mFile already exists in the blacklist.\\n"
+  else
+    if [ -f "$file" ]; then
+      echo "$file" >> "$blacklist_file"
+    else
+      printf "\\e[94mThe file doesn't exist.\\n"
+    fi
+  fi
 }
 
 function func_config {
@@ -866,25 +903,29 @@ function func_list {
     NAME=${FILE%.*}
     if [ -f "$line" ]; then
       printf "\\e[94mScanning: $line\\n"
-      if [ -n "$media_container" ] && [ "$EXT" != "$media_container" ]; then
-        printf "\\e[34mAdding: $line\\n"
-        line=${line#"$mount_dir"}
-        echo "$line" >> "$list_file"
+      if grep -Fxq "$line" "$blacklist_file"; then
+          printf "\\e[94mFound in blacklist. Skipping.\\n"
       else
-        file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
-      	file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+        if [ -n "$media_container" ] && [ "$EXT" != "$media_container" ]; then
+          printf "\\e[34mAdding: $line\\n"
+          line=${line#"$mount_dir"}
+          echo "$line" >> "$list_file"
+        else
+          file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+          file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
 
-        if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ]; then
-          if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
-            printf "\\e[34mAdding: $line\\n"
-            line=${line#"$mount_dir"}
-            echo "$line" >> "$list_file"
+          if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ]; then
+            if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
+              printf "\\e[34mAdding: $line\\n"
+              line=${line#"$mount_dir"}
+              echo "$line" >> "$list_file"
+            fi
           fi
         fi
+        EXT=""
+        file_audio_codec=""
+        file_video_codec=""
       fi
-      EXT=""
-      file_audio_codec=""
-      file_video_codec=""
     fi
   done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.m4b' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp3' -or -name '*.mp4' -or -name '*.ts' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
@@ -922,6 +963,15 @@ printf "$HEADER_TEXT"
 case "$command" in
   about)
     func_about
+    ;;
+  blacklist)
+    if [ $OPTIND -eq 1 ]; then
+      printf "\\n\\e[39mUsage:\\n  plexus blacklist \"/path/to/file.ext\"\\n"
+      exit 0
+    else
+      file="${subcommand,,}"
+      func_blacklist
+    fi
     ;;
   config)
     func_config
@@ -1075,7 +1125,7 @@ case "$command" in
     shift $((OPTIND -1))
     ;;
   list)
-    while getopts ":a:c:d:l:m:v:" opt; do
+    while getopts ":a:b:c:d:l:m:v:" opt; do
       case $opt in
         a)
           if [ -z ${OPTARG,,} ]; then
@@ -1093,6 +1143,14 @@ case "$command" in
               printf "You have not entered a supported audio codec.\\n"
               exit 0
             fi
+          fi
+          ;;
+        b)
+          if [ -f ${OPTARG,,} ]; then
+            blacklist_file=${OPTARG,,}
+          else
+            printf "\\n\\e[31mBlacklist does not exist.\\n"
+            exit 0
           fi
           ;;
         c)
@@ -1168,7 +1226,7 @@ case "$command" in
       esac
     done
     if [ $OPTIND -eq 1 ]; then
-      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for Rclone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
+      printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -b              Blacklist. Default = $blacklist_file\\n  -c              Media container. Default = $media_container\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for Rclone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
       exit 0
     fi
     func_list

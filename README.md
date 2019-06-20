@@ -24,9 +24,15 @@ sudo yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el
 sudo yum -q -y install curl ffmpeg ffmpeg-devel rsync
 ```
 
+Install any missing dependencies (macOS):
+``` shell
+sudo brew update && sudo brew upgrade
+sudo brew install curl ffmpeg rsync
+```
+
 Create all of the temporary folders required:
 ``` shell
-mkdir -p $HOME/.config/plexus /mnt/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
+mkdir -p $HOME/.config/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
 ```
 
 Download the default config file and move it into the correct location:
