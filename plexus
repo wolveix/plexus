@@ -39,7 +39,7 @@ case $distro in
     packages="apt-get -qq -y"
     ;;
   'macOS')
-    if [ $(command -v brew) ]; then
+    if [ ! $(command -v brew) ]; then
       printf "\\nIt doesn't look like you have brew installed.\\nFind out more here: https://brew.sh/.\\n"
       exit
     else
