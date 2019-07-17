@@ -681,7 +681,7 @@ function func_encode {
 
         codec_copy=false
         codecs=""
-        options="-map 0 $exclude_stream -preset $ffmpeg_preset -max_muxing_queue_size 1024 -movflags faststart -threads 2"
+        options="-map 0 $exclude_stream -preset $ffmpeg_preset -max_muxing_queue_size 1024 -movflags faststart -threads $ffmpeg_threads"
         if [ -z "$audio_codec" ] || [ "$file_audio_codec" == "$audio_codec" ]; then
           codec_copy=true
           codecs="$codecs -c:a copy"
