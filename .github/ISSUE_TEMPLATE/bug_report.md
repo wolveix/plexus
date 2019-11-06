@@ -23,13 +23,12 @@ A clear and concise description of what you expected to happen.
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
-**Desktop (please complete the following information):**
+**Setup:**
  - OS: [CentOS, Fedora, Ubuntu, Mint, ETC?]
  - FFMPEG Version:
  - Script Version Ran:
 
 **Additional context**
 Add any other context about the problem here.
-
 
 **Paste logs below this line**
