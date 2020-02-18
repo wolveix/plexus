@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.70 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.71 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -344,7 +344,7 @@ function func_blacklist {
 
 function func_config {
   printf "\\nWhat config menu would you like to access?\\n"
-  select option in "Binaries (FFprobe, FFmpeg, Rclone)" "Codecs (Audio, Container, Video)" "Directories (Convert, Converted, Media, Mount)" "FFmpeg (CPU, Force Overwrite, Hardware Acceleration, Preset)" "Exit"
+  select option in "Binaries (FFprobe, FFmpeg, Rclone)" "Codecs (Audio, Container, Video)" "Directories (Convert, Converted, Media, Mount)" "FFmpeg (CPU, Force Overwrite, Deinterlacing, Hardware Acceleration, Preset)" "Exit"
   do
     case "$option" in
       "Binaries (FFprobe, FFmpeg, Rclone)")
@@ -458,9 +458,9 @@ function func_config {
           esac
         done
         ;;
-      "FFmpeg (CPU, Force Overwrite, Hardware Acceleration, Preset)")
+      "FFmpeg (CPU, Force Overwrite, Deinterlacing, Hardware Acceleration, Preset)")
         printf "\\nWhich option do you want to set?\\n"
-        select option in "CPU" "Force Overwrite" "Hardware Acceleration" "Preset" "Exit"
+        select option in "CPU" "Force Overwrite" "Deinterlacing" "Hardware Acceleration" "Preset" "Exit"
         do
           case "$option" in
             "CPU")
@@ -482,6 +482,17 @@ function func_config {
               done
               set_config "force_overwrite=\"$force_overwrite\"" "force_overwrite=\"$answer\""
               printf "\\nForce overwrite successfully set.\\n"
+              exit 0
+              ;;
+            "Deinterlacing")
+              printf "\\n\\nEnter true or false: "
+
+              lock=0
+              while [ "$lock" -eq 0 ]; do
+                prompt_user "truth"
+              done
+              set_config "deinterlacing=\"$deinterlacing\"" "deinterlacing=\"$answer\""
+              printf "\\nDeinterlacing successfully set.\\n"
               exit 0
               ;;
             "Hardware Acceleration")
@@ -581,8 +592,7 @@ function func_encode {
         if [ -n "$rclone_remote" ]; then
           if [ -n "$rclone_binary" ]; then
             printf "Downloading: $FILE\\n"
-            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" $rclone_bwlimit --stats-one-line -P
-            then
+            if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" $rclone_bwlimit --stats-one-line -P; then
               printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n"
               /bin/sed -i 1d "$list_file"
               echo "$line" >> "$list_file"
@@ -599,7 +609,7 @@ function func_encode {
       else
         if [ -f "$line" ]; then
           printf "\\e[34mCopying: $FILE\\e[0m\\n"
-          $rsync_binary -ah --info=progress2 "$line" "$convert_dir/$NAME/"
+          ln -sf "$line" "$convert_dir/$NAME/"
           printf "\\n\\e[34mFile copied.\\e[0m\\n"
           file_exists=1
         else
@@ -704,6 +714,10 @@ function func_encode {
 
         if [ "$video_codec" == "h264" ]; then
           options="$options -crf 20 -level 4.1"
+        fi
+
+        if [ "$deinterlacing" != "false" ]; then
+          options="$options -vf yadif"
         fi
 
         encode_success=0
@@ -901,31 +915,36 @@ function func_list {
     EXT=${line##*.}
     FILE=${line##*/}
     NAME=${FILE%.*}
-    if [ -f "$line" ]; then
-      printf "\\e[94mScanning: $line\\n"
-      if grep -Fxq "$line" "$blacklist_file"; then
-          printf "\\e[94mFound in blacklist. Skipping.\\n"
-      else
-        if [ -n "$media_container" ] && [ "$EXT" != "$media_container" ]; then
-          printf "\\e[34mAdding: $line\\n"
-          line=${line#"$mount_dir"}
-          echo "$line" >> "$list_file"
-        else
-          file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
-          file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
 
-          if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ]; then
-            if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
-              printf "\\e[34mAdding: $line\\n"
-              line=${line#"$mount_dir"}
-              echo "$line" >> "$list_file"
+    if [[ "$NAME" != *"[Plexus Encode]"* ]]; then
+      if [ -f "$line" ]; then
+        printf "\\e[94mScanning: $line\\n"
+        if grep -Fxq "$line" "$blacklist_file"; then
+            printf "\\e[94mFound in blacklist. Skipping.\\n"
+        else
+          if [ -n "$media_container" ] && [ "$EXT" != "$media_container" ]; then
+            printf "\\e[34mAdding: $line\\n"
+            line=${line#"$mount_dir"}
+            echo "$line" >> "$list_file"
+          else
+            file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+            file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+
+            if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ]; then
+              if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
+                printf "\\e[34mAdding: $line\\n"
+                line=${line#"$mount_dir"}
+                echo "$line" >> "$list_file"
+              fi
             fi
           fi
+          EXT=""
+          file_audio_codec=""
+          file_video_codec=""
         fi
-        EXT=""
-        file_audio_codec=""
-        file_video_codec=""
       fi
+    else
+      printf "\\e[94mSkipping (already encoded): $line\\n"
     fi
   done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.m4b' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp3' -or -name '*.mp4' -or -name '*.ts' -or -name '*.mpg' -or -name '*.wmv')
   printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"

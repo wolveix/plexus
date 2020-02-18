@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.70 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.71 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 OS="`uname`"
 case "$OS" in
@@ -21,14 +21,14 @@ case "$OS" in
 esac
 case $distro in
   '"CentOS Linux"')
-    printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
+    printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
     yum -q -y install epel-release
     yum -q -y update && yum -q -y upgrade
     yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
     yum -q -y install curl ffmpeg ffmpeg-devel rsync
     ;;
   '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
-    printf "\\n\\e[36mInstalling any missing dependencies.\\n\\e[94m"
+    printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
     apt-get -qq -y update && apt-get -qq -y upgrade
     apt-get -qq -y install curl ffmpeg rsync
     ;;
@@ -48,7 +48,8 @@ case $distro in
     exit
     ;;
 esac
-mkdir -p $HOME/.config/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus
+mkdir -p "$HOME/.config/plexus" "$HOME/.plexus/encode/convert" "$HOME/.plexus/encode/converted" "$HOME/.plexus/rclone" "/tmp/plexus"
+touch "$HOME/.config/plexus/blacklist"
 cd /tmp/plexus || exit
 if [ ! -f "$HOME/.config/plexus/plexus.conf" ]; then
   curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf 2>/dev/null
