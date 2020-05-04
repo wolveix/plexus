@@ -32,7 +32,7 @@ case "$OS" in
     ;;
 esac
 case $distro in
-  '"CentOS Linux"')
+  '"CentOS Linux"' | '"Fedora"')
     packages="yum -q -y"
     ;;
   '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
