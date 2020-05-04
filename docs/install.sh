@@ -32,7 +32,7 @@ case $distro in
     apt-get -qq -y update && apt-get -qq -y upgrade
     apt-get -qq -y install curl ffmpeg rsync
     ;;
-  '"Fedora"')
+  'Fedora')
     printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
     dnf -q -y install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
     dnf -q -y install "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"

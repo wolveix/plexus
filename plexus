@@ -38,7 +38,7 @@ case $distro in
   '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
     packages="apt-get -qq -y"
     ;;
-  '"Fedora"')
+  'Fedora')
     packages="dnf -q -y"
     ;;
   'macOS')
@@ -820,7 +820,7 @@ function func_install {
                 $packages update
                 $packages localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
                 $packages install ffmpeg ffmpeg-devel
-              elif [ "$distro" == '"Fedora"' ]; then
+              elif [ "$distro" == 'Fedora' ]; then
                 $packages install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
                 $packages install "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
                 $packages install ffmpeg ffmpeg-devel
@@ -832,7 +832,7 @@ function func_install {
               ;;
             "FFmpeg (custom)")
               printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-              if [ "$distro" == '"CentOS Linux"' ] || [ "$distro" == '"Fedora"' ]; then
+              if [ "$distro" == '"CentOS Linux"' ] || [ "$distro" == 'Fedora' ]; then
                 $packages install build-essential bzip2 curl gcc-c++ make perl which
                 mkdir -p "$HOME/ffmpeg-build/packages/"
                 curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
