@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.71 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.72 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
   source "$HOME"/.config/plexus/plexus.conf
@@ -13,7 +13,7 @@ else
   mv plexus.conf "$HOME"/.config/plexus/
   printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
 fi
-OS="`uname`"
+OS=$(uname)
 case "$OS" in
   'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
     if [ ! -f "/etc/os-release" ]; then
@@ -32,11 +32,14 @@ case "$OS" in
     ;;
 esac
 case $distro in
-  '"CentOS Linux"' | '"Fedora"')
+  '"CentOS Linux"')
     packages="yum -q -y"
     ;;
   '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
     packages="apt-get -qq -y"
+    ;;
+  '"Fedora"')
+    packages="dnf -q -y"
     ;;
   'macOS')
     if [ ! $(command -v brew) ]; then
@@ -817,6 +820,10 @@ function func_install {
                 $packages update
                 $packages localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
                 $packages install ffmpeg ffmpeg-devel
+              elif [ "$distro" == '"Fedora"' ]; then
+                $packages install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
+                $packages install "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+                $packages install ffmpeg ffmpeg-devel
               else
                 $packages install ffmpeg
               fi
@@ -825,7 +832,7 @@ function func_install {
               ;;
             "FFmpeg (custom)")
               printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-              if [ "$distro" == '"CentOS Linux"' ]; then
+              if [ "$distro" == '"CentOS Linux"' ] || [ "$distro" == '"Fedora"' ]; then
                 $packages install build-essential bzip2 curl gcc-c++ make perl which
                 mkdir -p "$HOME/ffmpeg-build/packages/"
                 curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2

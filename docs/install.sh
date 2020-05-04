@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.71 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.72 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
-OS="`uname`"
+OS=$(uname)
 case "$OS" in
   'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
     if [ ! -f "/etc/os-release" ]; then
@@ -31,6 +31,12 @@ case $distro in
     printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
     apt-get -qq -y update && apt-get -qq -y upgrade
     apt-get -qq -y install curl ffmpeg rsync
+    ;;
+  '"Fedora"')
+    printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
+    dnf -q -y install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
+    dnf -q -y install "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
+    dnf -q -y install curl ffmpeg ffmpeg-devel
     ;;
   'macOS')
     if [ ! $(command -v brew) ]; then
