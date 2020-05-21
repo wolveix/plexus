@@ -5,12 +5,12 @@ A suite of tools to help manage the media behind a Plex server.
 ### Automatic
 You can automatically install Plexus by running the following line via a supported command line interface:
 ``` shell
-curl https://plexus.robt.me/install.sh | sudo bash
+curl https://plexus.wolveix.com/install.sh | sudo bash
 ```
 
 If you don't have superuser priviledges or are using macOS, use this instead:
 ``` shell
-curl https://plexus.robt.me/install.sh | bash
+curl https://plexus.wolveix.com/install.sh | bash
 ```
 
 ### Manual
