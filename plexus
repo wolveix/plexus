@@ -35,7 +35,7 @@ case $distro in
     '"CentOS Linux"')
         packages="yum -q -y"
         ;;
-    '"Debian GNU/Linux"' | '"Linux Mint"' | '"Ubuntu"')
+    '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
         packages="apt-get -qq -y"
         ;;
     'Fedora')
