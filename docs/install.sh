@@ -26,10 +26,17 @@ case $distro in
         ;;
     '"CentOS Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
-        yum -q -y install epel-release
-        yum -q -y update && yum -q -y upgrade
-        yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
-        yum -q -y install curl ffmpeg ffmpeg-devel rsync
+        if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
+            dnf -q -y install epel-release dnf-utils
+            yum-config-manager --set-enabled PowerTools
+            yum-config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
+            dnf -q -y install curl ffmpeg rsync
+        else
+            yum -q -y install epel-release
+            yum -q -y update && yum -q -y upgrade
+            yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
+            yum -q -y install curl ffmpeg ffmpeg-devel rsync
+        fi
         ;;
     '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"

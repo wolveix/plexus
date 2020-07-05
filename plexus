@@ -36,7 +36,11 @@ case $distro in
         packages="apk"
         ;;
     '"CentOS Linux"')
-        packages="yum -q -y"
+        if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
+             packages="dnf -q -y"
+        else
+            packages="yum -q -y"
+        fi
         ;;
     '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
         packages="apt-get -qq -y"
