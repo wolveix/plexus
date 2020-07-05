@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.72 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.73 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
     source "$HOME"/.config/plexus/plexus.conf
@@ -32,6 +32,9 @@ case "$OS" in
         ;;
 esac
 case $distro in
+    '"Alpine Linux"')
+        packages="apk"
+        ;;
     '"CentOS Linux"')
         packages="yum -q -y"
         ;;
@@ -810,12 +813,18 @@ function func_install {
                     case "$option" in
                         "All")
                             printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
-                            $packages install curl ffmpeg fuse rsync unzip
+                            if [ "$distro" == '"Alpine Linux"' ]; then
+                                $packages add curl ffmpeg fuse rsync unzip
+                            else
+                                $packages install curl ffmpeg fuse rsync unzip
+                            fi
                             curl https://rclone.org/install.sh 2>/dev/null | sudo bash
                             ;;
                         "FFmpeg")
                             printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
-                            if [ "$distro" == '"CentOS Linux"' ]; then
+                            if [ "$distro" == '"Alpine Linux"' ]; then
+                                $packages add ffmpeg
+                            elif [ "$distro" == '"CentOS Linux"' ]; then
                                 $packages install epel-release
                                 $packages update
                                 $packages localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
@@ -837,6 +846,9 @@ function func_install {
                                 mkdir -p "$HOME/ffmpeg-build/packages/"
                                 curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
                                 tar xvjf last_x264.tar.bz2 -C "$HOME/ffmpeg-build/packages/"
+                            elif [ "$distro" == '"Alpine Linux"' ]; then
+                                printf "\\n\\nBuilding FFmpeg from source is currently unsupported on Alpine.\\e[0m\\n" 
+                                exit 0
                             else
                                 $packages install build-essential curl g++ make perl
                             fi
@@ -850,13 +862,22 @@ function func_install {
                             ;;
                         "Fuse")
                             printf "\\n\\e[36mInstalling Fuse.\\n\\n\\e[0m"
-                            $packages install fuse
+                            if [ "$distro" == '"Alpine Linux"' ]; then
+                                $packages add fuse
+                            else
+                                $packages install fuse
+                            fi
                             printf "\\e[32mFuse has been installed!\\e[0m\\n"
                             exit 0
                             ;;
                         "Rclone")
                             printf "\\n\\e[36mInstalling Rclone.\\n\\n\\e[0m"
-                            $packages install curl unzip
+                            if [ "$distro" == '"Alpine Linux"' ]; then
+                                $packages add curl unzip
+                            else
+                                $packages install curl unzip
+                            fi
+                            
                             curl https://rclone.org/install.sh 2>/dev/null | sudo bash
                             exit 0
                             ;;

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.72 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.73 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 OS=$(uname)
 case "$OS" in
@@ -20,6 +20,10 @@ case "$OS" in
         ;;
 esac
 case $distro in
+    '"Alpine Linux"')
+        printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
+        apk add curl ffmpeg rsync
+        ;;
     '"CentOS Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
         yum -q -y install epel-release
