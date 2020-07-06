@@ -24,9 +24,9 @@ case $distro in
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
         apk add curl ffmpeg rsync
         ;;
-    '"Manjaro Linux"' | '"Arch Linux"' | '"ArcoLinuxD"')
+    '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
-        pacman -Syu 
+        pacman -Syu
         pacman -S curl ffmpeg rsync
         ;;
     '"CentOS Linux"')
