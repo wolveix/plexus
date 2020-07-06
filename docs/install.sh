@@ -31,17 +31,18 @@ case $distro in
         ;;
     '"CentOS Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
-        if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
-            dnf -q -y install epel-release dnf-utils
-            yum-config-manager --set-enabled PowerTools
-            yum-config-manager --add-repo=https://negativo17.org/repos/epel-multimedia.repo
-            dnf -q -y install curl ffmpeg rsync
-        else
-            yum -q -y install epel-release
-            yum -q -y update && yum -q -y upgrade
-            yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
-            yum -q -y install curl ffmpeg ffmpeg-devel rsync
+        if [ "$(rpm -qi ffmpeg)" = "package ffmpeg is not installed" ]; then
+            if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
+                yum -q -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+                yum -q -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
+                yum -q -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
+            else
+                yum -q -y install epel-release
+                yum -q -y update && yum -q -y upgrade
+                yum -q -y localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
+            fi
         fi
+        yum -q -y install curl ffmpeg ffmpeg-devel rsync
         ;;
     '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"

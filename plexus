@@ -39,11 +39,7 @@ case $distro in
         packages="pacman"
         ;;
     '"CentOS Linux"')
-        if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
-            packages="dnf -q -y"
-        else
-            packages="yum -q -y"
-        fi
+        packages="yum -q -y"
         ;;
     '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
         packages="apt-get -qq -y"
@@ -832,9 +828,18 @@ function func_install {
                             if [ "$distro" == '"Alpine Linux"' ]; then
                                 $packages add ffmpeg
                             elif [ "$distro" == '"CentOS Linux"' ]; then
-                                $packages install epel-release
+                                if [ "$(rpm -qi ffmpeg)" = "package ffmpeg is not installed" ]; then
+                                    if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
+                                        $packages install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+                                        $packages install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
+                                        $packages install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
+                                    else
+                                        $packages install epel-release
+                                        $packages update && yum -q -y upgrade
+                                        $packages localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
+                                    fi
+                                fi
                                 $packages update
-                                $packages localinstall --nogpgcheck https://download1.rpmfusion.org/free/el/rpmfusion-free-release-7.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-7.noarch.rpm
                                 $packages install ffmpeg ffmpeg-devel
                             elif [ "$distro" == 'Fedora' ]; then
                                 $packages install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
