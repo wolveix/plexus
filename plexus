@@ -36,7 +36,7 @@ case $distro in
         packages="apk"
         ;;
     '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
-        packages="pacman"
+        packages="yes | LC_ALL=en_US.UTF-8 pacman"
         ;;
     '"CentOS Linux"')
         packages="yum -q -y"
