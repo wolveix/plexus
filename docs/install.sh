@@ -26,8 +26,8 @@ case $distro in
         ;;
     '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
-        pacman -Syu
-        pacman -S curl ffmpeg rsync
+        yes | LC_ALL=en_US.UTF-8 pacman -Syu
+        yes | LC_ALL=en_US.UTF-8 pacman -S curl ffmpeg rsync
         ;;
     '"CentOS Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
