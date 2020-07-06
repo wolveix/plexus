@@ -35,9 +35,12 @@ case $distro in
     '"Alpine Linux"')
         packages="apk"
         ;;
+    '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
+        packages="pacman"
+        ;;
     '"CentOS Linux"')
         if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
-             packages="dnf -q -y"
+            packages="dnf -q -y"
         else
             packages="yum -q -y"
         fi
@@ -851,7 +854,7 @@ function func_install {
                                 curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
                                 tar xvjf last_x264.tar.bz2 -C "$HOME/ffmpeg-build/packages/"
                             elif [ "$distro" == '"Alpine Linux"' ]; then
-                                printf "\\n\\nBuilding FFmpeg from source is currently unsupported on Alpine.\\e[0m\\n" 
+                                printf "\\n\\nBuilding FFmpeg from source is currently unsupported on Alpine.\\e[0m\\n"
                                 exit 0
                             else
                                 $packages install build-essential curl g++ make perl
@@ -881,7 +884,7 @@ function func_install {
                             else
                                 $packages install curl unzip
                             fi
-                            
+
                             curl https://rclone.org/install.sh 2>/dev/null | sudo bash
                             exit 0
                             ;;

@@ -24,6 +24,11 @@ case $distro in
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
         apk add curl ffmpeg rsync
         ;;
+    '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
+        printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
+        pacman -Syu
+        pacman -S curl ffmpeg rsync
+        ;;
     '"CentOS Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
         if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
