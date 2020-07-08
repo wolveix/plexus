@@ -13,6 +13,11 @@ else
     mv plexus.conf "$HOME"/.config/plexus/
     printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
 fi
+
+if [ ! -d "$HOME"/.plexus ]; then
+    mkdir -p "$HOME"/.plexus
+fi
+
 OS=$(uname)
 case "$OS" in
     'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
