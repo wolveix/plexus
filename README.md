@@ -4,7 +4,7 @@ A suite of tools to help manage the media behind a Plex server.
 ## Docker
 Rather than installing the dependencies and downloading Plexus locally, you can run the Plexus Docker image:
 ```shell
-docker run -v $HOME/.config/plexus:/root/.config/plexus -v $HOME/.plexus:/root/.plexus -v /your/media/mount:/media wolveix/Plexus:latest 
+docker run -v $HOME/.config/plexus:/root/.config/plexus -v $HOME/.plexus:/root/.plexus -v /path/to/media:/media wolveix/Plexus:latest 
 ```
 
 ## Install
