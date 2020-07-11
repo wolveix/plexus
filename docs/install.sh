@@ -35,7 +35,7 @@ case $distro in
             if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
                 yum -q -y install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
                 yum -q -y install https://download1.rpmfusion.org/free/el/rpmfusion-free-release-8.noarch.rpm https://download1.rpmfusion.org/nonfree/el/rpmfusion-nonfree-release-8.noarch.rpm
-                yum -q -y install http://rpmfind.net/linux/epel/7/x86_64/Packages/s/SDL2-2.0.10-1.el7.x86_64.rpm
+                yum -q -y install http://mirror.leaseweb.com/centos/8/PowerTools/x86_64/os/Packages/SDL2-2.0.10-2.el8.x86_64.rpm
             else
                 yum -q -y install epel-release
                 yum -q -y update && yum -q -y upgrade
