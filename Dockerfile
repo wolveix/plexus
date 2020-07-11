@@ -9,9 +9,6 @@ RUN apk update && \
 
 RUN curl https://rclone.org/install.sh | bash
 
-RUN mkdir -p /config /root/.config/plexus && \
-    cp -rl /root/.config/plexus /config
-
-WORKDIR /config
+WORKDIR /root/.config/plexus
 
 ENTRYPOINT [ "plexus" ]
