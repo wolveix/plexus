@@ -135,7 +135,7 @@ fi
 
 function main () {
     VERBOSE=6
-    declare -A LOG_LEVELS
+    declare -a LOG_LEVELS
     LOG_LEVELS=([0]="emerg" [1]="alert" [2]="crit" [3]="err" [4]="warning" [5]="notice" [6]="info" [7]="debug")
     function .log () {
         local LEVEL=${1}
