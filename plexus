@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.73 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.74 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
     source "$HOME"/.config/plexus/plexus.conf
@@ -53,11 +53,11 @@ case $distro in
         packages="dnf -q -y"
         ;;
     'macOS')
-        if [ ! $(command -v brew) ]; then
+        if [ ! "$(command -v brew)" ]; then
             printf "\\nIt doesn't look like you have brew installed.\\nFind out more here: https://brew.sh/.\\n"
             exit
         else
-            packages=$(command -v brew)
+            packages="$(command -v brew)"
         fi
         ;;
     *)
@@ -67,8 +67,8 @@ case $distro in
 esac
 
 function set_config(){
-    ovalue=$(echo $1 | sed 's_/_\\/_g')
-    nvalue=$(echo $2 | sed 's_/_\\/_g')
+    ovalue=$(echo "$1" | sed 's_/_\\/_g')
+    nvalue=$(echo "$2" | sed 's_/_\\/_g')
     sed -ie "s/$ovalue/$nvalue/g" "$HOME"/.config/plexus/plexus.conf
 }
 
@@ -82,10 +82,10 @@ else
 fi
 
 if [ -z "$ffprobe_binary" ]; then
-    if [ ! $(command -v ffprobe) ]; then
+    if [ ! "$(command -v ffprobe)" ]; then
         ffprobe_binary=""
     else
-        ffprobe_binary=$(command -v ffprobe)
+        ffprobe_binary="$(command -v ffprobe)"
         set_config "ffprobe_binary=\"\"" "ffprobe_binary=\"$ffprobe_binary\""
     fi
 else
@@ -95,10 +95,10 @@ else
 fi
 
 if [ -z "$fusermount_binary" ]; then
-    if [ ! $(command -v fusermount) ]; then
+    if [ ! "$(command -v fusermount)" ]; then
         fusermount_binary=""
     else
-        fusermount_binary=$(command -v fusermount)
+        fusermount_binary="$(command -v fusermount)"
         set_config "fusermount_binary=\"\"" "fusermount_binary=\"$fusermount_binary\""
     fi
 else
@@ -108,10 +108,10 @@ else
 fi
 
 if [ -z "$rclone_binary" ]; then
-    if [ ! $(command -v rclone) ]; then
+    if [ ! "$(command -v rclone)" ]; then
         rclone_binary=""
     else
-        rclone_binary=$(command -v rclone)
+        rclone_binary="$(command -v rclone)"
         set_config "rclone_binary=\"\"" "rclone_binary=\"$rclone_binary\""
     fi
 else
@@ -121,10 +121,10 @@ else
 fi
 
 if [ -z "$rsync_binary" ]; then
-    if [ ! $(command -v rsync) ]; then
+    if [ ! "$(command -v rsync)" ]; then
         rsync_binary=""
     else
-        rsync_binary=$(command -v rsync)
+        rsync_binary="$(command -v rsync)"
         set_config "rsync_binary=\"\"" "rsync_binary=\"$rsync_binary\""
     fi
 else
@@ -262,7 +262,7 @@ function check_variable {
 
 function prompt_user {
     answer=""
-    while [ -z $answer ]; do
+    while [ -z "$answer" ]; do
         read -r -p '' answer
         if [ "$answer" == "exit" ] || [ "$answer" == "0" ]; then
             exit 0
@@ -478,7 +478,7 @@ function func_config {
                 do
                     case "$option" in
                         "CPU")
-                            cpu_threads=`grep -c processor /proc/cpuinfo`
+                            cpu_threads=$(grep -c processor /proc/cpuinfo)
                             printf "\\n\\nEnter a number between 1 - :\\n"
                             while [ "$answer" -eq 0 ] ||  [ "$answer" -gt "$cpu_threads" ]; do
                                 prompt_user
@@ -586,7 +586,7 @@ function func_encode {
 
     printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
 
-    while read line; do
+    while read -r line; do
         if [ -n "$line" ]; then
             DIRP=${line%/*}
             EXT=${line##*.}
@@ -606,7 +606,7 @@ function func_encode {
                 if [ -n "$rclone_remote" ]; then
                     if [ -n "$rclone_binary" ]; then
                         printf "Downloading: $FILE\\n"
-                        if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" $rclone_bwlimit --stats-one-line -P; then
+                        if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" "$rclone_bwlimit" --stats-one-line -P; then
                             printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n"
                             /bin/sed -i 1d "$list_file"
                             echo "$line" >> "$list_file"
@@ -648,30 +648,30 @@ function func_encode {
                 fi
 
                 exclude_stream=""
-                file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT"`
-                file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT"`
-                stream_info=$($ffprobe_binary -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$NAME/$FNAME.$EXT" 2>&1)
-                stream_count=`echo "$stream_info" |& grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :`
+                file_audio_codec=$("$ffprobe_binary" -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT")
+                file_video_codec=$("$ffprobe_binary" -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT")
+                stream_info=$("$ffprobe_binary" -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$NAME/$FNAME.$EXT" 2>&1)
+                stream_count=$(echo "$stream_info" | grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
                 if [ "$stream_count" -gt 0 ]; then
-                    stream_id=`echo "$stream_info" |& grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :`
+                    stream_id=$(echo "$stream_info" | grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
                     counter=0
                     failcounter=0
                     printf "\\e[34mExtracting subtitles...\\n\\e[0m"
                     until [ "$counter" = "$stream_count" ]
                     do
                         counter=$((counter+1))
-                        excluded_stream="$(echo "$stream_id" |& grep -oP '0:[0-9]{1,3}' |& sed -n "${counter}"p)"
-                        subtitle_language="$(echo "$stream_id" |& grep -oP '\([a-z]{3}\)' |& sed -n "${counter}"p |& sed -e 's/(//' -e 's/)//')"
+                        excluded_stream="$(echo "$stream_id" | grep -oP '0:[0-9]{1,3}' | sed -n "${counter}"p)"
+                        subtitle_language="$(echo "$stream_id" | grep -oP '\([a-z]{3}\)' | sed -n "${counter}"p | sed -e 's/(//' -e 's/)//')"
                         if [ -n "$excluded_stream" ]; then
                             if [ "$exclude_stream" = "*$excluded_stream*" ]; then
                                 counter="$stream_count"
                             else
                                 exclude_stream="$exclude_stream -map -$excluded_stream"
-                                if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
+                                if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin "$ffmpeg_verbose" -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
                                     if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt" ]; then
                                         /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
                                     fi
-                                    if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
+                                    if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin "$ffmpeg_verbose" -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
                                         if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" ]; then
                                             /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"
                                         fi
@@ -695,7 +695,7 @@ function func_encode {
                 printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
 
                 if [ "$audio_codec" = "aac" ]; then
-                    if [ -n "`$ffmpeg_binary -encoders |& grep -i libfdk`" ]; then
+                    if [ -n "$($ffmpeg_binary -encoders | grep -i libfdk)" ]; then
                         audio_codec="libfdk_aac"
                         ffmpeg_error="\\nAn unknown error occurred with FFmpeg.\\n"
                     else
@@ -735,14 +735,14 @@ function func_encode {
                 fi
 
                 encode_success=0
-                if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
+                if ! $ffmpeg_binary "$hwaccel" -y -i "$convert_dir/$NAME/$FNAME.$EXT" "$options" "$codecs" -nostdin "$ffmpeg_verbose" -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
                     if [ "$codec_copy" = true ]; then
                         printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
                         if [ -n "$audio_codec" ]; then
                             encode_audio_codec="$audio_codec"
                         fi
 
-                        if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
+                        if ! $ffmpeg_binary "$hwaccel" -y -i "$convert_dir/$NAME/$FNAME.$EXT" "$options" -c:v $video_library -c:a $encode_audio_codec -nostdin "$ffmpeg_verbose" -stats "$converted_dir/$NAME/$FNAME.$media_container"
                         then
                             printf "$ffmpeg_error"
                             encode_success=0
@@ -767,7 +767,7 @@ function func_encode {
                                 printf "\\e[34mOriginal file deleted.\\e[0m"
                             fi
                             printf "\\n\\e[34mUploading converted file to Rclone remote.\\n\\e[0m"
-                            $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" $rclone_bwlimit --include "$NAME.*" --stats-one-line -P
+                            $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" "$rclone_bwlimit" --include "$NAME.*" --stats-one-line -P
                             printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
                         else
                             if [ "$force_overwrite" = true ]; then
@@ -780,7 +780,7 @@ function func_encode {
                             printf "\\n\\e[34mFile successfully moved.\\e[0m"
                         fi
                         printf "\\n\\e[34mDeleting cached file and delisting it."
-                        /bin/rm -r "$convert_dir/$NAME"
+                        /bin/rm -r "${convert_dir:?}/$NAME"
                         /bin/sed -i 1d "$list_file"
                         printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
                     else
@@ -972,8 +972,8 @@ function func_list {
                         line=${line#"$mount_dir"}
                         echo "$line" >> "$list_file"
                     else
-                        file_audio_codec=`$ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
-                        file_video_codec=`$ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line"`
+                        file_audio_codec=$($ffprobe_binary -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
+                        file_video_codec=$($ffprobe_binary -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$line")
 
                         if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ]; then
                             if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
@@ -1044,7 +1044,7 @@ case "$command" in
         while getopts ":a:c:fl:p:r:v:-:" opt; do
             case $opt in
                 a)
-                    if [ -z ${OPTARG,,} ]; then
+                    if [ -z "${OPTARG,,}" ]; then
                         if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
                             printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                             exit 0
@@ -1054,15 +1054,15 @@ case "$command" in
                             audio_codec=""
                         fi
                     else
-                        check_variable audio ${OPTARG,,}
-                        if [ $audio_codec = "null" ]; then
+                        check_variable audio "${OPTARG,,}"
+                        if [ "$audio_codec" = "null" ]; then
                             printf "You have not entered a supported audio codec.\\n"
                             exit 0
                         fi
                     fi
                     ;;
                 c)
-                    if [ -z ${OPTARG,,} ]; then
+                    if [ -z "${OPTARG,,}" ]; then
                         if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
                             printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                             exit 0
@@ -1071,7 +1071,7 @@ case "$command" in
                         fi
                     else
                         check_variable container "${OPTARG,,}"
-                        if [ $media_container = "null" ]; then
+                        if [ "$media_container" = "null" ]; then
                             printf "You have not entered a supported media container.\\n"
                             exit 0
                         fi
@@ -1089,15 +1089,15 @@ case "$command" in
                     fi
                     ;;
                 p)
-                    check_variable ffmpeg_preset ${OPTARG,,}
+                    check_variable ffmpeg_preset "${OPTARG,,}"
                     if [ $ffmpeg_preset = "null" ]; then
                         printf "You have not entered a valid ffmpeg preset.\\n"
                         exit 0
                     fi
                     ;;
                 r)
-                    $rclone_binary listremotes > $HOME/.plexus/rclone/remotes.txt
-                    if [ ! -z "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]; then
+                    $rclone_binary listremotes > "$HOME"/.plexus/rclone/remotes.txt
+                    if [ -n "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]; then
                         if [ "${OPTARG: -1}" == ":" ]; then
                             rclone_remote="$OPTARG"
                         else
@@ -1110,7 +1110,7 @@ case "$command" in
                     fi
                     ;;
                 v)
-                    if [ -z ${OPTARG,,} ]; then
+                    if [ -z "${OPTARG,,}" ]; then
                         if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
                             printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                             exit 0
@@ -1119,8 +1119,8 @@ case "$command" in
                             video_codec=""
                         fi
                     else
-                        check_variable video ${OPTARG,,}
-                        if [ $video_codec = "null" ]; then
+                        check_variable video "${OPTARG,,}"
+                        if [ "$video_codec" = "null" ]; then
                             printf "You have not entered a supported video codec.\\n"
                             exit 0
                         fi
@@ -1192,7 +1192,7 @@ case "$command" in
         while getopts ":a:b:c:d:l:m:v:" opt; do
             case $opt in
                 a)
-                    if [ -z ${OPTARG,,} ]; then
+                    if [ -z "${OPTARG,,}" ]; then
                         if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
                             printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                             exit 0
@@ -1202,15 +1202,15 @@ case "$command" in
                             audio_codec=""
                         fi
                     else
-                        check_variable audio ${OPTARG,,}
-                        if [ $audio_codec = "null" ]; then
+                        check_variable audio "${OPTARG,,}"
+                        if [ "$audio_codec" = "null" ]; then
                             printf "You have not entered a supported audio codec.\\n"
                             exit 0
                         fi
                     fi
                     ;;
                 b)
-                    if [ -f ${OPTARG,,} ]; then
+                    if [ -f "${OPTARG,,}" ]; then
                         blacklist_file=${OPTARG,,}
                     else
                         printf "\\n\\e[31mBlacklist does not exist.\\n"
@@ -1218,7 +1218,7 @@ case "$command" in
                     fi
                     ;;
                 c)
-                    if [ -z ${OPTARG,,} ]; then
+                    if [ -z "${OPTARG,,}" ]; then
                         if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
                             printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                             exit 0
@@ -1227,7 +1227,7 @@ case "$command" in
                         fi
                     else
                         check_variable container "${OPTARG,,}"
-                        if [ $media_container = "null" ]; then
+                        if [ "$media_container" = "null" ]; then
                             printf "You have not entered a supported media container.\\n"
                             exit 0
                         fi
@@ -1263,7 +1263,7 @@ case "$command" in
                     fi
                     ;;
                 v)
-                    if [ -z ${OPTARG,,} ]; then
+                    if [ -z "${OPTARG,,}" ]; then
                         if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
                             printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
                             exit 0
@@ -1272,8 +1272,8 @@ case "$command" in
                             video_codec=""
                         fi
                     else
-                        check_variable video ${OPTARG,,}
-                        if [ $video_codec = "null" ]; then
+                        check_variable video "${OPTARG,,}"
+                        if [ "$video_codec" = "null" ]; then
                             printf "You have not entered a supported video codec.\\n"
                             exit 0
                         fi

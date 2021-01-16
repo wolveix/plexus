@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.73 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.74 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 OS=$(uname)
 case "$OS" in
@@ -56,7 +56,7 @@ case $distro in
         dnf -q -y install curl ffmpeg ffmpeg-devel
         ;;
     'macOS')
-        if [ ! $(command -v brew) ]; then
+        if [ ! "$(command -v brew)" ]; then
             printf "\\nIt doesn't look like you have brew installed.\\nFind out more here: https://brew.sh/.\\n"
             exit
         else
