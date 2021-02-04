@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.74 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+HEADER_TEXT="\\e[93m=== Plexus v0.9.75 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
 set -e
 if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
     source "$HOME"/.config/plexus/plexus.conf
@@ -584,7 +584,7 @@ function func_encode {
         exit 0
     fi
 
-    printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
+    printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
 
     while read -r line; do
         if [ -n "$line" ]; then
@@ -667,11 +667,11 @@ function func_encode {
                                 counter="$stream_count"
                             else
                                 exclude_stream="$exclude_stream -map -$excluded_stream"
-                                if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin "$ffmpeg_verbose" -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
+                                if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map $excluded_stream -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
                                     if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt" ]; then
                                         /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
                                     fi
-                                    if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin "$ffmpeg_verbose" -stats -map "$excluded_stream" -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
+                                    if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map $excluded_stream -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
                                         if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" ]; then
                                             /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"
                                         fi
@@ -735,14 +735,14 @@ function func_encode {
                 fi
 
                 encode_success=0
-                if ! $ffmpeg_binary "$hwaccel" -y -i "$convert_dir/$NAME/$FNAME.$EXT" "$options" "$codecs" -nostdin "$ffmpeg_verbose" -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
+                if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
                     if [ "$codec_copy" = true ]; then
                         printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
                         if [ -n "$audio_codec" ]; then
                             encode_audio_codec="$audio_codec"
                         fi
 
-                        if ! $ffmpeg_binary "$hwaccel" -y -i "$convert_dir/$NAME/$FNAME.$EXT" "$options" -c:v $video_library -c:a $encode_audio_codec -nostdin "$ffmpeg_verbose" -stats "$converted_dir/$NAME/$FNAME.$media_container"
+                        if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
                         then
                             printf "$ffmpeg_error"
                             encode_success=0

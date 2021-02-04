@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.74 - Developed by Robert Thomas ==="
+printf "\\e[93m=== Plexus v0.9.75 - Developed by Robert Thomas ==="
 printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
 OS=$(uname)
 case "$OS" in
