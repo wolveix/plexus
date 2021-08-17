@@ -917,7 +917,7 @@ function func_install {
 
                 /bin/mv "$HOME/.config/plexus/plexus.conf" "$config_file"
                 printf "\\n\\nYour current config file has been backed up ($config_file).\\n"
-                curl https://plexus.robt.me/install.sh 2>/dev/null | sudo bash
+                curl https://plexus.wolveix.com/install.sh 2>/dev/null | sudo bash
                 exit 0
                 ;;
             "Exit")
