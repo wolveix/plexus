@@ -32,8 +32,8 @@
          <div class="doc-wrapper">
             <div class="container">
                <div id="doc-header" class="doc-header text-center">
-                  <h1 class="doc-title"><i class="icon fa fa-share"></i> Plexus Suite v0.9.75</h1>
-                  <div class="meta"><i class="fa fa-clock-o"></i> Last updated: February 4th, 2021</div>
+                  <h1 class="doc-title"><i class="icon fa fa-share"></i> Plexus Suite v0.9.76</h1>
+                  <div class="meta"><i class="fa fa-clock-o"></i> Last updated: December 14th, 2023</div>
                </div>
                <div class="doc-body">
                   <div class="doc-content">
@@ -41,12 +41,24 @@
                        <section id="about-section" class="doc-section">
                           <h2 class="section-title">About</h2>
                           <div class="section-block">
-                             <p>Plexus is a suite of easy-to-use tools to help manage your media collection. You can build a list of media within your collection which is incorrectly encoded, and then re-encode all of that media automatically. Plexus also integrates smoothly with RClone.</p><br><p>I created this suite because I knew that I would need a simple CLI solution to re-encoding all of my media at some point in the future, and no other solution met my requirements.</p><br><p>Thank you <a href="https://github.com/masonr" target="_blank">Mason Rowe</a> for your advice along the way.</p><br><p><strong><a href="https://github.com/Wolveix" target="_blank">Robert Thomas</a> - <a href="https://robt.me" target="_blank">Full Stack Engineer</a> at <a href="https://levelzerotechnology.com" target="_blank">Level Zero Technology</a></strong></p>
+                             <p>Plexus is a simple tool to mass re-encode your media collection. It compiles a list of
+                                your media files which do not currently contain your preferred codecs. It can then
+                                re-encode all of that media for you, even if the media is stored on remote storage (via
+                                Rclone).</p><br>
+                             <p>I created Plexus because I needed a simple CLI tool for re-encoding all of my media, and
+                                every other solution ended up being more complex than I needed them to be.
+                             </p><br>
+                             <p>Thank you, <a href="https://github.com/masonr" target="_blank">Mason Rowe</a> for your
+                                support.</p><br>
+                             <p><strong><a href="https://github.com/wolveix" target="_blank">Robert Thomas</a> - <a
+                                     href="https://robt.me" target="_blank">Lead Software Engineer</a> at <a
+                                     href="https://levelzerotechnology.com" target="_blank">Level Zero
+                                Technology</a></strong></p>
                           </div>
                        </section>
                         <section id="installation-section" class="doc-section">
                            <h2 class="section-title">Docker</h2>
-                           <div id="installation-automatic" class="section-block">
+                           <div class="section-block">
                               <p>Rather than installing the dependencies and downloading Plexus locally, you can run the Plexus Docker image: </p>
                               <p><code>docker run -v $HOME/.config/plexus:/config wolveix/Plexus:latest </code></p>
                            </div>
@@ -55,7 +67,7 @@
                               <h3 class="block-title">Automatic</h3>
                               <p>You can automatically install Plexus by running the following line via a supported command line interface: </p>
                               <p><code>curl https://plexus.wolveix.com/install.sh | sudo bash</code></p>
-                              <p>If you don't have superuser priviledges or are using macOS, use this instead: </p>
+                              <p>If you don't have superuser privileges or are using macOS, use this instead: </p>
                               <p><code>curl https://plexus.wolveix.com/install.sh | bash</code></p>
                            </div>
                            <div id="installation-manual" class="section-block">
@@ -80,11 +92,12 @@
                               <p><code>mkdir -p $HOME/.config/plexus $HOME/.plexus/encode/convert $HOME/.plexus/encode/converted $HOME/.plexus/rclone /tmp/plexus</code></p>
                               <br>
                               <p>Download the default config file and move it into the correct location:</p>
-                              <p><code>curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf</code></p>
+                              <p><code>curl -O
+                                 https://raw.githubusercontent.com/wolveix/plexus/master/plexus.conf</code></p>
                               <p><code>mv plexus.conf "$HOME"/.config/plexus/</code></p>
                               <br>
                               <p>Next, download the executable itself:</p>
-                              <p><code>curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus</code></p>
+                              <p><code>curl -O https://raw.githubusercontent.com/wolveix/plexus/master/plexus</code></p>
                               <br>
                               <p>Finally, correct the file permissions and move it into your respective operating system's application directory. The following example is for Linux:</p>
                               <p><code>chmod u+x plexus && chmod 755 plexus</code></p>
@@ -131,7 +144,11 @@
                               <p>Once the list function has finished its process, you can begin the encoding process by running <code>plexus encode -l /path/to/list -r RCloneRemote:</code>.</p>
                               <br>
                               <h3>Support</h3>
-                              <p>If you run into any issues, please <a href="https://github.com/Wolveix/Plexus/issues/new?assignees=&labels=&template=bug_report.md&title=">submit an issue via the repo</a>. If the issue occurs during the encode command, please run the command again with the <code>--verbose</code> flag so that we may have a better idea of what's happening.</p>
+                              <p>If you run into any issues, please <a
+                                      href="https://github.com/wolveix/plexus/issues/new?assignees=&labels=&template=bug_report.md&title=">submit
+                                 an issue via the repo</a>. If the issue occurs during the encode command, please run
+                                 the command again with the <code>--verbose</code> flag so that we may have a better
+                                 idea of what's happening.</p>
                            </div>
                         </section>
                      </div>
@@ -155,7 +172,10 @@
          </div>
       </div>
       <footer id="footer" class="footer text-center">
-         <div class="container"> <small class="copyright">App developed by <a href="https://github.com/Wolveix" target="_blank">Robert Thomas</a> | Site template designed by <a href="http://themes.3rdwavemedia.com/" targe="_blank">Xiaoying Riley</a></small> </div>
+         <div class="container"><small class="copyright">App developed by <a href="https://github.com/wolveix"
+                                                                             target="_blank">Robert Thomas</a> | Site
+            template designed by <a href="http://themes.3rdwavemedia.com/" targe="_blank">Xiaoying Riley</a></small>
+         </div>
       </footer>
       <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/1.12.3/jquery.min.js"></script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/3.3.6/js/bootstrap.min.js"></script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.15.0/prism.min.js"></script> <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/jquery.scrollto@2.1.2/jquery.scrollTo.min.js"></script> <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery.matchHeight/0.7.2/jquery.matchHeight-min.js"></script> <script type="text/javascript" src="/assets/js/main.js"></script>
    </body>

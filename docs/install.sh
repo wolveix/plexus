@@ -1,11 +1,12 @@
 #!/usr/bin/env bash
-printf "\\e[93m=== Plexus v0.9.75 - Developed by Robert Thomas ==="
-printf "\\n=== https://github.com/Wolveix/Plexus ===\\e[0m"
+printf "\\e[93m=== Plexus v0.9.76 - Developed by Robert Thomas ==="
+printf "\\n=== https://github.com/wolveix/plexus ===\\e[0m"
 OS=$(uname)
+
 case "$OS" in
     'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
         if [ ! -f "/etc/os-release" ]; then
-            printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+            printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/wolveix/plexus/issues/new\\n"
             exit
         else
             distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
@@ -15,10 +16,11 @@ case "$OS" in
         distro='macOS'
         ;;
     *)
-        printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+        printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/wolveix/plexus/issues/new\\n"
         exit
         ;;
 esac
+
 case $distro in
     '"Alpine Linux"')
         printf "\\n\\e[36mInstalling any missing dependencies...\\n\\e[94m"
@@ -67,18 +69,21 @@ case $distro in
         "$brew_binary" install curl ffmpeg rsync
         ;;
     *)
-        printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+        printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/wolveix/plexus/issues/new\\n"
         exit
         ;;
 esac
+
 mkdir -p "$HOME/.config/plexus" "$HOME/.plexus/encode/convert" "$HOME/.plexus/encode/converted" "$HOME/.plexus/rclone" "/tmp/plexus"
 touch "$HOME/.config/plexus/blacklist"
 cd /tmp/plexus || exit
+
 if [ ! -f "$HOME/.config/plexus/plexus.conf" ]; then
-    curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf 2>/dev/null
+    curl -O https://raw.githubusercontent.com/wolveix/plexus/master/plexus.conf 2>/dev/null
     mv plexus.conf "$HOME"/.config/plexus/
 fi
-curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus 2>/dev/null
+
+curl -O https://raw.githubusercontent.com/wolveix/plexus/master/plexus 2>/dev/null
 chmod u+x plexus
 
 case "$OS" in
@@ -99,5 +104,6 @@ case "$OS" in
         mv plexus /usr/local/bin/plexus
         ;;
 esac
+
 printf "\\n\\e[32mInstall completed!\\n"
 printf "\\nPlease run 'plexus help' to see a list of available commands.\\n\\e[0m"

@@ -1,149 +1,117 @@
 #!/usr/bin/env bash
-HEADER_TEXT="\\e[93m=== Plexus v0.9.75 - https://github.com/Wolveix/Plexus ===\\e[0m\\n"
+
 set -e
-if [ -f "$HOME"/.config/plexus/plexus.conf ]; then
-    source "$HOME"/.config/plexus/plexus.conf
-    if [ -z "$audio_codec" ] || [ -z "$convert_dir" ] || [ -z "$converted_dir" ] || [ -z "$ffmpeg_threads" ] || [ -z "$ffmpeg_preset" ] || [ -z "$force_overwrite" ] || [ -z "$list_file" ] || [ -z "$media_container" ] || [ -z "$media_dir" ] || [ -z "$video_codec" ] || [ -z "$video_library" ]; then
-        printf "Your config file ($HOME/.config/plexus/plexus.conf) is missing required parameters.\\nMove or delete it and then run Plexus again.\\n"
-        exit 0
-    fi
-else
-    mkdir -p "$HOME"/.config/plexus/
-    curl -O https://raw.githubusercontent.com/Wolveix/Plexus/master/plexus.conf 2>/dev/null
-    mv plexus.conf "$HOME"/.config/plexus/
-    printf "\\e[32mA config file could not be found. The default file has been downloaded.\\n"
-fi
 
-if [ ! -d "$HOME"/.plexus ]; then
-    mkdir -p "$HOME"/.plexus
-fi
-
+# declare constants
+COLOR_BLUE="\\e[34m"
+COLOR_CYAN="\\e[96m"
+COLOR_GREEN="\\e[32m"
+COLOR_RED="\\e[31m"
+COLOR_RESET="\\e[0m"
+COLOR_YELLOW="\\e[93m"
+HEADER_TEXT="${COLOR_YELLOW}=== Plexus v0.9.76 - https://github.com/wolveix/plexus ===$COLOR_RESET\\n${COLOR_RESET}"
 OS=$(uname)
-case "$OS" in
-    'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
-        if [ ! -f "/etc/os-release" ]; then
-            printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
+OS_DISTRO=""
+
+function setup() {
+    # download config file if it doesn't already exist
+    if [ ! -f "$HOME"/.config/plexus/plexus.conf ]; then
+        mkdir -p "$HOME"/.config/plexus/
+        curl -O https://raw.githubusercontent.com/wolveix/plexus/main/plexus.conf 2>/dev/null
+        mv plexus.conf "$HOME"/.config/plexus/
+        printf "%bA config file could not be found. The default file has been downloaded.\\n%b" "$COLOR_GREEN" "$COLOR_RESET"
+    fi
+
+    # check config exists and contains necessary values
+    source "${HOME}/.config/plexus/plexus.conf"
+    required_values=("audio_codec" "convert_dir" "converted_dir" "ffmpeg_threads" "ffmpeg_preset" "force_overwrite" "list_file" "media_container" "media_dir" "video_codec" "video_library")
+
+    for value in "${required_values[@]}"; do
+      if [ -z "${!value}" ]; then
+          echo "$value"
+          printf "Your config file (%s/.config/plexus/plexus.conf) is missing required parameters.\\nMove or delete it and then run Plexus again.\\n" "$HOME"
+          exit 1
+      fi
+    done
+
+    # create the plexus temporary directory if it doesn't already exist
+    if [ ! -d "$HOME"/.plexus ]; then
+        mkdir -p "$HOME"/.plexus
+    fi
+
+    # determine OS distribution in-use
+    case "$OS" in
+        'FreeBSD' | 'Linux' | 'NetBSD' | 'OpenBSD')
+            if [ ! -f "/etc/os-release" ]; then
+                printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/wolveix/plexus/issues/new\\n"
+                exit
+            else
+                OS_DISTRO=$(awk -F= '/^media_name/{print $2}' /etc/os-release)
+            fi
+            ;;
+        'Darwin')
+            OS_DISTRO='macOS'
+            ;;
+        *)
+            printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/wolveix/plexus/issues/new\\n"
             exit
-        else
-            distro=$(awk -F= '/^NAME/{print $2}' /etc/os-release)
-        fi
-        ;;
-    'Darwin')
-        distro='macOS'
-        ;;
-    *)
-        printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
-        exit
-        ;;
-esac
-case $distro in
-    '"Alpine Linux"')
-        packages="apk"
-        ;;
-    '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
-        packages="yes | LC_ALL=en_US.UTF-8 pacman"
-        ;;
-    '"CentOS Linux"')
-        packages="yum -q -y"
-        ;;
-    '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
-        packages="apt-get -qq -y"
-        ;;
-    'Fedora')
-        packages="dnf -q -y"
-        ;;
-    'macOS')
-        if [ ! "$(command -v brew)" ]; then
-            printf "\\nIt doesn't look like you have brew installed.\\nFind out more here: https://brew.sh/.\\n"
-            exit
-        else
+            ;;
+    esac
+
+    # determine local package manager
+    case $OS_DISTRO in
+        '"Alpine Linux"')
+            packages="apk"
+            ;;
+        '"Arch Linux"' | '"ArcoLinuxD"' | '"Manjaro Linux"')
+            packages="yes | LC_ALL=en_US.UTF-8 pacman"
+            ;;
+        '"CentOS Linux"')
+            packages="yum -q -y"
+            ;;
+        '"Debian GNU/Linux"' | '"Linux Mint"' | '"Raspbian GNU/Linux"' | '"Ubuntu"')
+            packages="apt-get -qq -y"
+            ;;
+        'Fedora')
+            packages="dnf -q -y"
+            ;;
+        'macOS')
             packages="$(command -v brew)"
-        fi
-        ;;
-    *)
-        printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/Wolveix/Plexus/issues/new\\n"
-        exit
-        ;;
-esac
+            if [ ! "$(command -v brew)" ]; then
+                printf "\\nIt doesn't look like you have brew installed.\\nFind out more here: https://brew.sh/.\\n"
+                exit 1
+            fi
+            ;;
+        *)
+            printf "\\nIt doesn't look like your distro is supported.\\nCreate an issue here: https://github.com/wolveix/plexus/issues/new\\n"
+            exit 1
+            ;;
+    esac
 
-function set_config(){
-    ovalue=$(echo "$1" | sed 's_/_\\/_g')
-    nvalue=$(echo "$2" | sed 's_/_\\/_g')
-    sed -ie "s/$ovalue/$nvalue/g" "$HOME"/.config/plexus/plexus.conf
-}
+    # declare local function to reduce code repetition when configuring binary paths below
+    function set_binary_path() {
+        local binary=$1
+        local binary_path=$(command -v "$binary")
+        local config_field="${binary}_binary"
 
-if [ -z "$ffmpeg_binary" ]; then
-    ffmpeg_binary=$(command -v ffmpeg)
-    set_config "ffmpeg_binary=\"\"" "ffmpeg_binary=\"$ffmpeg_binary\""
-else
-    if [ ! -f "$ffmpeg_binary" ]; then
-        ffmpeg_binary=""
-    fi
-fi
-
-if [ -z "$ffprobe_binary" ]; then
-    if [ ! "$(command -v ffprobe)" ]; then
-        ffprobe_binary=""
-    else
-        ffprobe_binary="$(command -v ffprobe)"
-        set_config "ffprobe_binary=\"\"" "ffprobe_binary=\"$ffprobe_binary\""
-    fi
-else
-    if [ ! -f "$ffprobe_binary" ]; then
-        ffprobe_binary=""
-    fi
-fi
-
-if [ -z "$fusermount_binary" ]; then
-    if [ ! "$(command -v fusermount)" ]; then
-        fusermount_binary=""
-    else
-        fusermount_binary="$(command -v fusermount)"
-        set_config "fusermount_binary=\"\"" "fusermount_binary=\"$fusermount_binary\""
-    fi
-else
-    if [ ! -f "$fusermount_binary" ]; then
-        fusermount_binary=""
-    fi
-fi
-
-if [ -z "$rclone_binary" ]; then
-    if [ ! "$(command -v rclone)" ]; then
-        rclone_binary=""
-    else
-        rclone_binary="$(command -v rclone)"
-        set_config "rclone_binary=\"\"" "rclone_binary=\"$rclone_binary\""
-    fi
-else
-    if [ ! -f "$rclone_binary" ]; then
-        rclone_binary=""
-    fi
-fi
-
-if [ -z "$rsync_binary" ]; then
-    if [ ! "$(command -v rsync)" ]; then
-        rsync_binary=""
-    else
-        rsync_binary="$(command -v rsync)"
-        set_config "rsync_binary=\"\"" "rsync_binary=\"$rsync_binary\""
-    fi
-else
-    if [ ! -f "$rsync_binary" ]; then
-        rsync_binary=""
-    fi
-fi
-
-function main () {
-    VERBOSE=6
-    declare -a LOG_LEVELS
-    LOG_LEVELS=([0]="emerg" [1]="alert" [2]="crit" [3]="err" [4]="warning" [5]="notice" [6]="info" [7]="debug")
-    function .log () {
-        local LEVEL=${1}
-        shift
-        if [ "${VERBOSE}" -ge "${LEVEL}" ]; then
-            echo "[${LOG_LEVELS[$LEVEL]}]" "$@"
+        if [ -z "$binary_path" ] || [ ! -f "$binary_path" ]; then
+            eval $config_field=""
+        else
+            eval $config_field="$binary_path"
+            set_config "${config_field}=\"\"" "${config_field}=\"$binary_path\""
         fi
     }
+
+    # configure binary paths
+    set_binary_path "ffmpeg"
+    set_binary_path "ffprobe"
+    set_binary_path "fusermount"
+    set_binary_path "rclone"
+    set_binary_path "rsync"
+}
+
+function set_config() {
+    sed -ie "s/$(echo "$1" | sed 's_/_\\/_g')/$(echo "$2" | sed 's_/_\\/_g')/g" "$HOME"/.config/plexus/plexus.conf
 }
 
 function check_variable {
@@ -254,8 +222,8 @@ function check_variable {
             esac
             ;;
         *)
-            printf "\\e[31m\\nAn unexpected error has occurred.\\e[0m\\n"
-            exit 0
+            printf "%b\\nAn unexpected error has occurred.%b\\n" "$COLOR_RED" "$COLOR_RESET"
+            exit 1
             ;;
     esac
 }
@@ -268,103 +236,56 @@ function prompt_user {
             exit 0
         fi
 
-        if [ -n "$1" ]; then
-            case "$1" in
-                "audio")
-                    check_variable "audio" "$answer"
-                    if [ "$audio_codec" == "null" ]; then
-                        printf "\\nYou must enter a valid codec.\\n"
-                        answer=""
+        case "$1" in
+            "directory")
+                if [ ! -d "$answer" ]; then
+                    printf "\\nYou must enter a valid directory.\\n"
+                    answer=""
+                else
+                    if [ "${answer: -1}" == "/" ]; then
+                        answer="${answer::-1}"
                     fi
-                    ;;
-                "container")
-                    check_variable "container" "$answer"
-                    if [ "$media_container" == "null" ]; then
-                        printf "\\nYou must enter a valid container.\\n"
-                        answer=""
-                    fi
-                    ;;
-                "directory")
-                    if [ ! -d "$answer" ]; then
-                        printf "\\nYou must enter a valid directory.\\n"
-                        answer=""
-                    else
-                        if [ "${answer: -1}" == "/" ]; then
-                            answer="${answer::-1}"
-                        fi
-                    fi
-                    ;;
-                "ffmpeg")
-                    check_variable "ffmpeg_preset" "$answer"
-                    if [ "$video_codec" == "null" ]; then
-                        printf "\\nYou must enter a valid preset.\\n"
-                        answer=""
-                    fi
-                    ;;
-                "file")
-                    if [ ! -f "$answer" ]; then
-                        printf "\\nYou must enter a valid file.\\n"
-                        answer=""
-                    fi
-                    ;;
-                "hardware")
-                    check_variable "hardware" "$answer"
-                    if [ "$hardware_codec" == "null" ]; then
-                        printf "\\nYou must enter a valid codec.\\n"
-                        answer=""
-                    fi
-                    ;;
-                "truth")
-                    if [ "$answer" != "true" ]; then
-                        if [ "$answer" != "false" ]; then
-                            lock=0
-                        else
-                            lock=1
-                        fi
-                    else
-                        lock=1
-                    fi
-                    ;;
-                "video")
-                    check_variable "video" "$answer"
-                    if [ "$video_codec" == "null" ]; then
-                        printf "\\nYou must enter a valid codec.\\n"
-                        answer=""
-                    fi
-                    ;;
-                *)
-                    # Do nothing
-                    ;;
-            esac
-        fi
+                fi
+                ;;
+            "file")
+                if [ ! -f "$answer" ]; then
+                    printf "\\nYou must enter a valid file.\\n"
+                    answer=""
+                fi
+                ;;
+            "audio"|"container"|"ffmpeg"|"hardware"|"video")
+                check_variable "$1" "$answer"
+                if [ "${1}_codec" == "null" ]; then
+                    printf "\\nYou must enter a valid recognized value."
+                    answer=""
+                fi
+                ;;
+            *)
+                # Do nothing
+                ;;
+        esac
     done
-}
-
-function func_about {
-    printf "\\nPlexus is a suite of easy-to-use tools to help manage your media\\ncollection. You can build a list of the media in your collection\\nwhich is incorrectly encoded, and then re-encode all of that media\\nautomatically. Plexus also integrates smoothly with Rclone.\\n\\nI created this suite because I knew that I would need a simple CLI\\nsolution to re-encoding all of my media at some point in the future,\\nand no other solution met my requirements.\\n\\nThank you to Mason Rowe for the advice and starting scripts.\\n\\n- Robert Thomas\\n  Full Stack Engineer at Level Zero Technology.\\n  https://github.com/Wolveix/Plexus\\n"
 }
 
 function func_blacklist {
     if grep -Fxq "$file" "$blacklist_file"; then
-        printf "\\e[94mFile already exists in the blacklist.\\n"
+        printf "%bFile already exists in the blacklist.\\n" "$COLOR_BLUE"
     else
         if [ -f "$file" ]; then
             echo "$file" >> "$blacklist_file"
         else
-            printf "\\e[94mThe file doesn't exist.\\n"
+            printf "%bThe file doesn't exist.\\n" "$COLOR_BLUE"
         fi
     fi
 }
 
 function func_config {
     printf "\\nWhat config menu would you like to access?\\n"
-    select option in "Binaries (FFprobe, FFmpeg, Rclone)" "Codecs (Audio, Container, Video)" "Directories (Convert, Converted, Media, Mount)" "FFmpeg (CPU, Force Overwrite, Deinterlacing, Hardware Acceleration, Preset)" "Exit"
-    do
+    select option in "Binaries (FFprobe, FFmpeg, Rclone)" "Codecs (Audio, Container, Video)" "Directories (Convert, Converted, Media, Mount)" "FFmpeg (CPU, Force Overwrite, Deinterlacing, Hardware Acceleration, Preset)" "Exit"; do
         case "$option" in
             "Binaries (FFprobe, FFmpeg, Rclone)")
                 printf "\\nWhich binary do you want to set?\\n"
-                select option in "FFprobe" "FFmpeg" "Rclone" "Exit"
-                do
+                select option in "FFprobe" "FFmpeg" "Rclone" "Exit"; do
                     case "$option" in
                         "FFprobe")
                             printf "\\n\\nWhat do you want to set the FFprobe binary to?\\n"
@@ -388,7 +309,7 @@ function func_config {
                             exit 0
                             ;;
                         "Exit")
-                            printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                            printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                             exit 0
                             ;;
                     esac
@@ -396,8 +317,7 @@ function func_config {
                 ;;
             "Codecs (Audio, Container, Video)")
                 printf "\\nWhich codec do you want to set?\\n"
-                select option in "Audio" "Container" "Video" "Exit"
-                do
+                select option in "Audio" "Container" "Video" "Exit"; do
                     case "$option" in
                         "Audio")
                             printf "\\n\\nWhat do you want to set the audio codec to?\\n"
@@ -426,7 +346,7 @@ function func_config {
                             exit 0
                             ;;
                         "Exit")
-                            printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                            printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                             exit 0
                             ;;
                     esac
@@ -434,8 +354,7 @@ function func_config {
                 ;;
             "Directories (Convert, Converted, Media, Mount)")
                 printf "\\nWhich directory do you want to set?\\n"
-                select option in "Convert" "Converted" "Media" "Mount" "Exit"
-                do
+                select option in "Convert" "Converted" "Media" "Mount" "Exit"; do
                     case "$option" in
                         "Convert")
                             printf "\\n\\nWhat do you want to set the convert directory to?\\n"
@@ -466,7 +385,7 @@ function func_config {
                             exit 0
                             ;;
                         "Exit")
-                            printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                            printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                             exit 0
                             ;;
                     esac
@@ -474,8 +393,7 @@ function func_config {
                 ;;
             "FFmpeg (CPU, Force Overwrite, Deinterlacing, Hardware Acceleration, Preset)")
                 printf "\\nWhich option do you want to set?\\n"
-                select option in "CPU" "Force Overwrite" "Deinterlacing" "Hardware Acceleration" "Preset" "Exit"
-                do
+                select option in "CPU" "Force Overwrite" "Deinterlacing" "Hardware Acceleration" "Preset" "Exit"; do
                     case "$option" in
                         "CPU")
                             cpu_threads=$(grep -c processor /proc/cpuinfo)
@@ -483,6 +401,7 @@ function func_config {
                             while [ "$answer" -eq 0 ] ||  [ "$answer" -gt "$cpu_threads" ]; do
                                 prompt_user
                             done
+
                             set_config "ffmpeg_threads=\"$ffmpeg_threads\"" "ffmpeg_threads=\"$answer\""
                             printf "\\nFFmpeg thread allocation successfully set.\\n"
                             exit 0
@@ -494,6 +413,7 @@ function func_config {
                             while [ "$lock" -eq 0 ]; do
                                 prompt_user "truth"
                             done
+
                             set_config "force_overwrite=\"$force_overwrite\"" "force_overwrite=\"$answer\""
                             printf "\\nForce overwrite successfully set.\\n"
                             exit 0
@@ -505,14 +425,14 @@ function func_config {
                             while [ "$lock" -eq 0 ]; do
                                 prompt_user "truth"
                             done
+
                             set_config "deinterlacing=\"$deinterlacing\"" "deinterlacing=\"$answer\""
                             printf "\\nDeinterlacing successfully set.\\n"
                             exit 0
                             ;;
                         "Hardware Acceleration")
                             printf "\\nWhich option do you want to set?\\n"
-                            select option in "Codec" "Enabled" "Exit"
-                            do
+                            select option in "Codec" "Enabled" "Exit"; do
                                 case "$option" in
                                     "Codec")
                                         printf "\\n\\nWhat do you want to set the hardware codec to?\\n"
@@ -534,7 +454,7 @@ function func_config {
                                         exit 0
                                         ;;
                                     "Exit")
-                                        printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                                        printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                                         exit 0
                                         ;;
                                 esac
@@ -549,14 +469,14 @@ function func_config {
                             exit 0
                             ;;
                         "Exit")
-                            printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                            printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                             exit 0
                             ;;
                     esac
                 done
                 ;;
             "Exit")
-                printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                 exit 0
                 ;;
         esac
@@ -564,34 +484,33 @@ function func_config {
 }
 
 function func_encode {
-    if [ "$verbose" == "true" ]; then
-        ffmpeg_verbose=""
-    else
+    ffmpeg_verbose=""
+    if [ "$verbose" != "true" ]; then
         ffmpeg_verbose="-loglevel quiet"
     fi
 
     if [ -n "$rclone_bwlimit" ]; then
         if ! [[ "$rclone_bwlimit" =~ ^[0-9]+$ ]]; then
             printf "You have not entered a valid number for --bwlimit (do not include KB).\\n"
-            exit 0
-        else
-            rclone_bwlimit="--bwlimit $rclone_bwlimit"
+            exit 1
         fi
+
+        rclone_bwlimit="--bwlimit $rclone_bwlimit"
     fi
 
     if [ ! -e "$list_file" ]; then
         printf "List file does not exist.\\nPlease manually specify a list file or run the list command to create one.\\n"
-        exit 0
+        exit 1
     fi
 
-    printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
+    printf "\\n%bAudio codec: %s\\nList file: %s\\nMedia container: %s\\nMedia directory: %s\\nVideo codec: %s\\n\\n%b" "$COLOR_GREEN" "$audio_codec" "$list_file" "$media_container" "$media_dir" "$video_codec" "$COLOR_RESET"
 
     while read -r line; do
         if [ -n "$line" ]; then
             DIRP=${line%/*}
             EXT=${line##*.}
-            FILE=${line##*/}
-            NAME=${FILE%.*}
+            raw_file=${line##*/}
+            media_name=${raw_file%.*}
 
             if [ -z "$media_container" ]; then
                 media_container=$EXT;
@@ -600,65 +519,60 @@ function func_encode {
             if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
                 /bin/rm -rf "$convert_dir" "$converted_dir"
             fi
-            /bin/mkdir -p "$convert_dir/$NAME/" "$converted_dir"
+            /bin/mkdir -p "$convert_dir/$media_name/" "$converted_dir"
 
-            if [ "$remote_transfer" = true ]; then
-                if [ -n "$rclone_remote" ]; then
-                    if [ -n "$rclone_binary" ]; then
-                        printf "Downloading: $FILE\\n"
-                        if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$NAME/" "$rclone_bwlimit" --stats-one-line -P; then
-                            printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n"
-                            /bin/sed -i 1d "$list_file"
-                            echo "$line" >> "$list_file"
-                            file_exists=0
-                        else
-                            printf "\\nFile downloaded.\\n"
-                            file_exists=1
-                        fi
-                    else
-                        printf "\\e[31mPlease install Rclone to use an Rclone remote with this command\\e[0m\\n"
-                        exit 0
-                    fi
+            if [ "$remote_transfer" = true ] && [ -n "$rclone_remote" ]; then
+                if [ -z "$rclone_remote" ]; then
+                    printf "%bPlease install Rclone to use an Rclone remote with this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                    exit 1
+                fi
+
+                printf "Downloading: %s\\n" "$raw_file"
+                if ! $rclone_binary copy "$rclone_remote$line" "$convert_dir/$media_name/" "$rclone_bwlimit" --stats-one-line -P; then
+                    printf "\\n\e[31mError: File could not be downloaded.\\n\\n\e[0mMoving onto the next line.\\n"
+                    /bin/sed -i 1d "$list_file"
+                    echo "$line" >> "$list_file"
+                    file_exists=0
+                else
+                    printf "\\nFile downloaded.\\n"
+                    file_exists=1
                 fi
             else
+                file_exists=0
                 if [ -f "$line" ]; then
-                    printf "\\e[34mCopying: $FILE\\e[0m\\n"
-                    ln -sf "$line" "$convert_dir/$NAME/"
-                    printf "\\n\\e[34mFile copied.\\e[0m\\n"
+                    printf "%bCopying: %s%b\\n" "$COLOR_BLUE" "$raw_file" "$COLOR_RESET"
+                    ln -sf "$line" "$convert_dir/$media_name/"
+                    printf "\\n%bFile copied.%b\\n" "$COLOR_BLUE" "$COLOR_RESET"
                     file_exists=1
-                else
-                    file_exists=0
                 fi
             fi
 
-            if [ "$force_overwrite" == true ]; then
-                FNAME="$NAME"
-            else
-                FNAME="$NAME [Plexus Encode]"
-                /bin/mv "$convert_dir/$NAME/$NAME.$EXT" "$convert_dir/$NAME/$FNAME.$EXT"
+            file_name="$media_name"
+            if [ "$force_overwrite" != true ]; then
+                file_name="$media_name [Plexus Encode]"
+                /bin/mv "$convert_dir/$media_name/$media_name.$EXT" "$convert_dir/$media_name/$file_name.$EXT"
             fi
 
             if [ $file_exists -eq 1 ]; then
-                if [ ! -d "$converted_dir/$NAME/" ]; then
-                    /bin/mkdir "$converted_dir/$NAME/"
-                else
-                    if [ -f "$converted_dir/$NAME/$FILE" ]; then
-                        /bin/rm "$converted_dir/$NAME/$FILE"
-                    fi
+                if [ ! -d "$converted_dir/$media_name/" ]; then
+                    /bin/mkdir "$converted_dir/$media_name/"
+                fi
+
+                if [ -f "$converted_dir/$media_name/$raw_file" ]; then
+                    /bin/rm "$converted_dir/$media_name/$raw_file"
                 fi
 
                 exclude_stream=""
-                file_audio_codec=$("$ffprobe_binary" -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT")
-                file_video_codec=$("$ffprobe_binary" -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$NAME/$FNAME.$EXT")
-                stream_info=$("$ffprobe_binary" -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$NAME/$FNAME.$EXT" 2>&1)
+                file_audio_codec=$("$ffprobe_binary" -v error -select_streams a:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$media_name/$file_name.$EXT")
+                file_video_codec=$("$ffprobe_binary" -v error -select_streams v:0 -show_entries stream=codec_name -of default=noprint_wrappers=1:nokey=1 "$convert_dir/$media_name/$file_name.$EXT")
+                stream_info=$("$ffprobe_binary" -select_streams s -show_entries stream=index,codec_name -of csv=p=0 "$convert_dir/$media_name/$file_name.$EXT" 2>&1)
                 stream_count=$(echo "$stream_info" | grep -cE 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
                 if [ "$stream_count" -gt 0 ]; then
                     stream_id=$(echo "$stream_info" | grep -E 'Subtitle: dvd_subtitle|Subtitle: hdmv_pgs' || :)
                     counter=0
-                    failcounter=0
-                    printf "\\e[34mExtracting subtitles...\\n\\e[0m"
-                    until [ "$counter" = "$stream_count" ]
-                    do
+                    fail_counter=0
+                    printf "%bExtracting subtitles...\\n%b" "$COLOR_BLUE" "$COLOR_RESET"
+                    until [ "$counter" = "$stream_count" ]; do
                         counter=$((counter+1))
                         excluded_stream="$(echo "$stream_id" | grep -oP '0:[0-9]{1,3}' | sed -n "${counter}"p)"
                         subtitle_language="$(echo "$stream_id" | grep -oP '\([a-z]{3}\)' | sed -n "${counter}"p | sed -e 's/(//' -e 's/)//')"
@@ -667,17 +581,18 @@ function func_encode {
                                 counter="$stream_count"
                             else
                                 exclude_stream="$exclude_stream -map -$excluded_stream"
-                                if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map $excluded_stream -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"; then
-                                    if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt" ]; then
-                                        /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
+                                if ! $ffmpeg_binary -y -i "$convert_dir/$media_name/$file_name.$EXT" -nostdin $ffmpeg_verbose -stats -map $excluded_stream -c copy "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.srt"; then
+                                    if [ -f "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.srt" ]; then
+                                        /bin/rm "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.srt"
                                     fi
-                                    if ! $ffmpeg_binary -y -i "$convert_dir/$NAME/$FNAME.$EXT" -nostdin $ffmpeg_verbose -stats -map $excluded_stream -c copy "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"; then
-                                        if [ -f "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" ]; then
-                                            /bin/rm "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup"
+
+                                    if ! $ffmpeg_binary -y -i "$convert_dir/$media_name/$file_name.$EXT" -nostdin $ffmpeg_verbose -stats -map $excluded_stream -c copy "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.sup"; then
+                                        if [ -f "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.sup" ]; then
+                                            /bin/rm "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.sup"
                                         fi
-                                        failcounter=$((failcounter+1))
+                                        fail_counter=$((fail_counter+1))
                                     else
-                                        /bin/mv "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.sup" "$converted_dir/$NAME/$FNAME.$counter.$subtitle_language.srt"
+                                        /bin/mv "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.sup" "$converted_dir/$media_name/$file_name.$counter.$subtitle_language.srt"
                                     fi
                                 fi
                             fi
@@ -685,14 +600,14 @@ function func_encode {
                         excluded_stream=""
                     done
 
-                    if [ "$failcounter" -gt 0 ]; then
-                        printf "\\e[91m$failcounter subtitle stream(s) could not be extracted.\\n\e[0m"
+                    if [ "$fail_counter" -gt 0 ]; then
+                        printf "%b%s subtitle stream(s) could not be extracted.\\n%b" "$COLOR_RED" "$fail_counter" "$COLOR_RESET"
                     else
-                        printf "\\e[34mSubtitles extracted successfully.\\n\\e[0m"
+                        printf "%bSubtitles extracted successfully.\\n%b" "$COLOR_BLUE" "$COLOR_RESET"
                     fi
                 fi
 
-                printf "\\n\\e[93mFile codecs:\\nAudio = $file_audio_codec -> $audio_codec\\nContainer = $EXT -> $media_container\\nVideo = $file_video_codec -> $video_codec\\e[0m\\n\\n"
+                printf "\\n%bFile codecs:\\nAudio = %s -> %s\\nContainer = %s -> %s\\nVideo = %s -> %s%b\\n\\n" "$COLOR_YELLOW" "$file_audio_codec" "$audio_codec" "$EXT" "$media_container" "$file_video_codec" "$video_codec" "$COLOR_RESET"
 
                 if [ "$audio_codec" = "aac" ]; then
                     if [ -n "$($ffmpeg_binary -encoders | grep -i libfdk)" ]; then
@@ -713,10 +628,9 @@ function func_encode {
                     codecs="$codecs -c:a $audio_codec"
                 fi
 
+                hwaccel=""
                 if [ "$hardware_acceleration" = "true" ]; then
                     hwaccel="-hwaccel $hardware_codec"
-                else
-                    hwaccel=""
                 fi
 
                 if [ -z "$video_codec" ] || [ "$file_video_codec" == "$video_codec" ]; then
@@ -735,14 +649,14 @@ function func_encode {
                 fi
 
                 encode_success=0
-                if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"; then
+                if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$media_name/$file_name.$EXT" $options $codecs -nostdin $ffmpeg_verbose -stats "$converted_dir/$media_name/$file_name.$media_container"; then
                     if [ "$codec_copy" = true ]; then
                         printf "\\n\\nAn unknown error occurred with FFmpeg.\\nTrying with full conversion instead.\\n\\n"
                         if [ -n "$audio_codec" ]; then
                             encode_audio_codec="$audio_codec"
                         fi
 
-                        if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$NAME/$FNAME.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$NAME/$FNAME.$media_container"
+                        if ! $ffmpeg_binary $hwaccel -y -i "$convert_dir/$media_name/$file_name.$EXT" $options -c:v $video_library -c:a $encode_audio_codec -nostdin $ffmpeg_verbose -stats "$converted_dir/$media_name/$file_name.$media_container"
                         then
                             printf "$ffmpeg_error"
                             encode_success=0
@@ -758,38 +672,38 @@ function func_encode {
                 fi
 
                 if [ $encode_success -eq 1 ]; then
-                    if [ -f "$converted_dir/$NAME/$FNAME.$media_container" ]; then
-                        printf "\\n\\e[92mFile successfully converted.\\e[0m"
+                    if [ -f "$converted_dir/$media_name/$file_name.$media_container" ]; then
+                        printf "\\n%bFile successfully converted.%b" "COLOR_GREEN" "$COLOR_RESET"
                         if [ -n "$rclone_remote" ]; then
                             if [ "$force_overwrite" = true ]; then
-                                printf "\\n\\e[34mDeleting original file from Rclone remote.\\n\\e[0m"
+                                printf "\\n%bDeleting original file from Rclone remote.\\n%b" "$COLOR_BLUE" "$COLOR_RESET"
                                 $rclone_binary delete "$rclone_remote$line" --stats-one-line -P
-                                printf "\\e[34mOriginal file deleted.\\e[0m"
+                                printf "%bOriginal file deleted.%b" "$COLOR_BLUE" "$COLOR_RESET"
                             fi
-                            printf "\\n\\e[34mUploading converted file to Rclone remote.\\n\\e[0m"
-                            $rclone_binary move "$converted_dir/$NAME/" "$rclone_remote$DIRP/" "$rclone_bwlimit" --include "$NAME.*" --stats-one-line -P
-                            printf "\\e[34mFile successfully uploaded.\\n\\e[0m"
+                            printf "\\n%bUploading converted file to Rclone remote.\\n%b" "$COLOR_BLUE" "$COLOR_RESET"
+                            $rclone_binary move "$converted_dir/$media_name/" "$rclone_remote$DIRP/" "$rclone_bwlimit" --include "$media_name.*" --stats-one-line -P
+                            printf "%bFile successfully uploaded.\\n%b" "$COLOR_BLUE" "$COLOR_RESET"
                         else
                             if [ "$force_overwrite" = true ]; then
-                                printf "\\n\\e[34mDeleting original file.\\e[0m"
+                                printf "\\n%bDeleting original file.%b" "$COLOR_BLUE" "$COLOR_RESET"
                                 /bin/rm "$line"
-                                printf "\\n\\e[34mOriginal file deleted.\\e[0m"
+                                printf "\\n%bOriginal file deleted.%b" "$COLOR_BLUE" "$COLOR_RESET"
                             fi
-                            printf "\\n\\e[34mMoving converted file to the correct location.\\e[0m\\n"
-                            $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$NAME/" "$DIRP"
-                            printf "\\n\\e[34mFile successfully moved.\\e[0m"
+                            printf "\\n%bMoving converted file to the correct location.%b\\n" "$COLOR_BLUE" "$COLOR_RESET"
+                            $rsync_binary -ah --info=progress2 --remove-source-files "$converted_dir/$media_name/" "$DIRP"
+                            printf "\\n%bFile successfully moved.%b" "$COLOR_BLUE" "$COLOR_RESET"
                         fi
-                        printf "\\n\\e[34mDeleting cached file and delisting it."
-                        /bin/rm -r "${convert_dir:?}/$NAME"
+                        printf "\\n%bDeleting cached file and delisting it." "$COLOR_BLUE"
+                        /bin/rm -r "${convert_dir:?}/$media_name"
                         /bin/sed -i 1d "$list_file"
-                        printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
+                        printf "\\n%bOperation successfully completed.%b\\n\\n" "$COLOR_GREEN" "$COLOR_RESET"
                     else
                         printf "\\nFile codecs are already correct. Delisting it.\\n"
                         /bin/sed -i 1d "$list_file"
-                        printf "\\n\\e[92mOperation successfully completed.\\e[0m\\n\\n"
+                        printf "\\n%bOperation successfully completed.%b\\n\\n" "$COLOR_GREEN" "$COLOR_RESET"
                     fi
                 else
-                    printf "\\n\\e[31mError: $line could not be encoded.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
+                    printf "\\n%bError: %s could not be encoded.\\n\\n%bMoving onto the next line.\\n\\n" "$COLOR_RED" "$line" "$COLOR_RESET"
                     if [ -d "$convert_dir" ] || [ -d "$converted_dir" ]; then
                         /bin/rm -rf "$convert_dir" "$converted_dir"
                     fi
@@ -797,7 +711,7 @@ function func_encode {
                     echo "$line" >> "$list_file"
                 fi
             else
-                printf "\\n\\e[31mError: $line does not exist.\\n\\n\\e[0mMoving onto the next line.\\n\\n"
+                printf "\\n%bError: %s does not exist.\\n\\n$bMoving onto the next line.\\n\\n" "$COLOR_RED" "$line" "$COLOR_RESET"
                 /bin/sed -i 1d "$list_file"
                 echo "$line" >> "$list_file"
             fi
@@ -806,7 +720,17 @@ function func_encode {
 }
 
 function func_help {
-    printf "\\n\\e[37mUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  blacklist       Add an entry to the blacklist\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an Rclone remote or cache, set from the config function\\n  unmount         Unmount an Rclone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n"
+    case "$(echo "$1" | tr '[:upper:]' '[:lower:]')" in
+        "about")
+            printf "This command tells you more about it's creation.\\n"
+            ;;
+        "encode")
+            printf "\n%bAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /binary_path/to/list.txt [flags]\\n  plexus encode -l /binary_path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = %s\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -f              Force overwrite. Default = %s\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = %s\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = %s\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              Rclone remote. Use this for Rclone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured Rclone\\n                  remote\\n\\n  -v              Video codec. Default = %s\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit Rclone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when experiencing issues\\n" "$COLOR_RESET" "$audio_codec" "$force_overwrite" "$list_file" "$ffmpeg_preset" "$video_codec"
+            ;;
+        *)
+            printf "\\n%bUsage:\\n  plexus [flags]\\n  plexus [command]\\n\\nAvailable Commands:\\n  about           Learn more about the program\\n  blacklist       Add an entry to the blacklist\\n  config          Change the default variable values\\n  encode          Begin processing the encode queue\\n  help            Displays a list of available commands\\n  install         Reinstall Plexus or install any missing dependencies\\n  list            Build a .txt file containing media with incorrect codecs\\n  mount           Mount an Rclone remote or cache, set from the config function\\n  unmount         Unmount an Rclone remote or cache, set from the config function\\n\\nAdditional Information:\\n  Use 'plexus help command' to find out more about a specific command\\n" "$COLOR_RESET"
+            ;;
+    esac
 }
 
 function func_install {
@@ -820,8 +744,8 @@ function func_install {
                 do
                     case "$option" in
                         "All")
-                            printf "\\n\\e[36mInstalling all dependencies.\\e[0m\\n\\n"
-                            if [ "$distro" == '"Alpine Linux"' ]; then
+                            printf "\\n%bInstalling all dependencies.%b\\n\\n" "$COLOR_CYAN" "$COLOR_RESET"
+                            if [ "$OS_DISTRO" == '"Alpine Linux"' ]; then
                                 $packages add curl ffmpeg fuse rsync unzip
                             else
                                 $packages install curl ffmpeg fuse rsync unzip
@@ -829,10 +753,10 @@ function func_install {
                             curl https://rclone.org/install.sh 2>/dev/null | sudo bash
                             ;;
                         "FFmpeg")
-                            printf "\\n\\e[36mInstalling FFmpeg.\\n\\n\\e[0m"
-                            if [ "$distro" == '"Alpine Linux"' ]; then
+                            printf "\\n%bInstalling FFmpeg.\\n\\n%b" "$COLOR_CYAN" "$COLOR_RESET"
+                            if [ "$OS_DISTRO" == '"Alpine Linux"' ]; then
                                 $packages add ffmpeg
-                            elif [ "$distro" == '"CentOS Linux"' ]; then
+                            elif [ "$OS_DISTRO" == '"CentOS Linux"' ]; then
                                 if [ "$(rpm -qi ffmpeg)" = "package ffmpeg is not installed" ]; then
                                     if [ "$(rpm --eval '%{centos_ver}')" -eq "8" ]; then
                                         $packages install https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
@@ -846,50 +770,51 @@ function func_install {
                                 fi
                                 $packages update
                                 $packages install ffmpeg ffmpeg-devel
-                            elif [ "$distro" == 'Fedora' ]; then
+                            elif [ "$OS_DISTRO" == 'Fedora' ]; then
                                 $packages install "https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm"
                                 $packages install "https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm"
                                 $packages install ffmpeg ffmpeg-devel
                             else
                                 $packages install ffmpeg
                             fi
-                            printf "\\e[32mFFmpeg has been installed!\\e[0m\\n"
+                            printf "%bFFmpeg has been installed!%b\\n" "$COLOR_GREEN" "$COLOR_RESET"
                             exit 0
                             ;;
                         "FFmpeg (custom)")
-                            printf "\\n\\e[36mInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n\\e[0m"
-                            if [ "$distro" == '"CentOS Linux"' ] || [ "$distro" == 'Fedora' ]; then
+                            printf "\\n%bInstalling FFmpeg (custom).\\nThis will take a few minutes as it's built from source with support for extended codecs\\n\\n%b" "$COLOR_CYAN" "$COLOR_RESET"
+                            if [ "$OS_DISTRO" == '"CentOS Linux"' ] || [ "$OS_DISTRO" == 'Fedora' ]; then
                                 $packages install build-essential bzip2 curl gcc-c++ make perl which
                                 mkdir -p "$HOME/ffmpeg-build/packages/"
                                 curl -O ftp://ftp.videolan.org/pub/x264/snapshots/last_x264.tar.bz2
                                 tar xvjf last_x264.tar.bz2 -C "$HOME/ffmpeg-build/packages/"
-                            elif [ "$distro" == '"Alpine Linux"' ]; then
-                                printf "\\n\\nBuilding FFmpeg from source is currently unsupported on Alpine.\\e[0m\\n"
+                            elif [ "$OS_DISTRO" == '"Alpine Linux"' ]; then
+                                printf "\\n\\nBuilding FFmpeg from source is currently unsupported on Alpine.%b\\n" "$COLOR_RESET"
                                 exit 0
                             else
                                 $packages install build-essential curl g++ make perl
                             fi
                             curl https://raw.githubusercontent.com/markus-perl/ffmpeg-build-script/master/web-install.sh?v1 2>/dev/null | sudo bash
                             printf "\\n\\nMoving FFmpeg into /usr/bin.\\n"
-                            sudo /bin/mv -f "$HOME/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
+                            sudo /bin/mv -f "${HOME}/ffmpeg-build/workspace/bin/ffmpeg" "/usr/bin"
                             printf "\\nRemoving FFmpeg build files.\\n"
-                            sudo /bin/rm -r "$HOME/ffmpeg-build"
-                            printf "\\n\\e[32mFFmpeg (custom) has been installed!\\e[0m\\n"
+                            sudo /bin/rm -r "${HOME}/ffmpeg-build"
+                            printf "\\n%bFFmpeg (custom) has been installed!%b\\n" "$COLOR_GREEN" "$COLOR_RESET"
                             exit 0
                             ;;
                         "Fuse")
-                            printf "\\n\\e[36mInstalling Fuse.\\n\\n\\e[0m"
-                            if [ "$distro" == '"Alpine Linux"' ]; then
+                            printf "\\n%bInstalling Fuse.\\n\\n%b" "$COLOR_CYAN" "$COLOR_RESET"
+                            if [ "$OS_DISTRO" == '"Alpine Linux"' ]; then
                                 $packages add fuse
                             else
                                 $packages install fuse
                             fi
-                            printf "\\e[32mFuse has been installed!\\e[0m\\n"
+
+                            printf "%bFuse has been installed!%b\\n" "$COLOR_GREEN" "$COLOR_RESET"
                             exit 0
                             ;;
                         "Rclone")
-                            printf "\\n\\e[36mInstalling Rclone.\\n\\n\\e[0m"
-                            if [ "$distro" == '"Alpine Linux"' ]; then
+                            printf "\\n%bInstalling Rclone.\\n\\n%b" "$COLOR_CYAN" "$COLOR_RESET"
+                            if [ "$OS_DISTRO" == '"Alpine Linux"' ]; then
                                 $packages add curl unzip
                             else
                                 $packages install curl unzip
@@ -899,7 +824,7 @@ function func_install {
                             exit 0
                             ;;
                         "Exit")
-                            printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                            printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                             exit 0
                             ;;
                     esac
@@ -910,18 +835,18 @@ function func_install {
                 if [ -f "$config_file" ]; then
                     i=1
                     while [ -f "$config_file.$i" ]; do
-                        let i++
+                        ((i++))
                     done
                     config_file="$config_file.$i"
                 fi
 
                 /bin/mv "$HOME/.config/plexus/plexus.conf" "$config_file"
-                printf "\\n\\nYour current config file has been backed up ($config_file).\\n"
+                printf "\\n\\nYour current config file has been backed up (%s).\\n" "$config_file"
                 curl https://plexus.wolveix.com/install.sh 2>/dev/null | sudo bash
                 exit 0
                 ;;
             "Exit")
-                printf "\\nYou can find the config file here: $HOME/.config/plexus/plexus.conf\\n"
+                printf "\\nYou can find the config file here: %s/.config/plexus/plexus.conf\\n" "$HOME"
                 exit 0
                 ;;
         esac
@@ -929,17 +854,16 @@ function func_install {
 }
 
 function func_list {
-    printf "\\n\\e[32mAudio codec: $audio_codec\\nList file: $list_file\\nMedia container: $media_container\\nMedia directory: $media_dir\\nMount Path: $mount_dir\\nVideo codec: $video_codec\\n\\n\\e[0m"
+    printf "\\n%bAudio codec: %s\\nList file: %s\\nMedia container: %s\\nMedia directory: %s\\nMount Path: %s\\nVideo codec: %s\\n\\n%b" "$COLOR_GREEN" "$audio_codec" "$list_file" "$media_container" "$media_dir" "$mount_dir" "$video_codec" "$COLOR_RESET"
 
     if [ ! -d "$media_dir" ]; then
-        printf "\\e[31mThe specified media directory ($media_dir) does not exist.\\n\\e[0m"
-        exit 0
+        printf "%bThe specified media directory (%s) does not exist.\\n%b" "$COLOR_RED" "$media_dir" "$COLOR_RESET"
+        exit 1
     fi
 
     if [ -f "$list_file" ]; then
-        printf "\\n\\e[93mThis will delete the current list file. Do you want to continue?\\n\\e[0m"
-        select option in "Yes" "No"
-        do
+        printf "\\n%bThis will delete the current list file. Do you want to continue?\\n%b" "$COLOR_YELLOW" "$COLOR_RESET"
+        select option in "Yes" "No"; do
             case "$option" in
                 "Yes")
                     rm "$list_file"
@@ -947,28 +871,28 @@ function func_list {
                     break
                     ;;
                 "No")
-                    printf "\\nYou can find the current list file here: $list_file\\n"
+                    printf "\\nYou can find the current list file here: %s\\n" "$list_file"
                     exit 0
                     ;;
             esac
         done
     fi
 
-    printf "\\e[32mScanning directory...\\n"
+    printf "%bScanning directory...\\n" "$COLOR_GREEN"
     while IFS= read -r line; do
         DIRP=${line%/*}
         EXT=${line##*.}
-        FILE=${line##*/}
-        NAME=${FILE%.*}
+        raw_file=${line##*/}
+        media_name=${raw_file%.*}
 
-        if [[ "$NAME" != *"[Plexus Encode]"* ]]; then
+        if [[ "$media_name" != *"[Plexus Encode]"* ]]; then
             if [ -f "$line" ]; then
-                printf "\\e[94mScanning: $line\\n"
+                printf "%bScanning: %s\\n" "$COLOR_BLUE" "$line"
                 if grep -Fxq "$line" "$blacklist_file"; then
-                    printf "\\e[94mFound in blacklist. Skipping.\\n"
+                    printf "%bFound in blacklist. Skipping.\\n" "$COLOR_BLUE"
                 else
                     if [ -n "$media_container" ] && [ "$EXT" != "$media_container" ]; then
-                        printf "\\e[34mAdding: $line\\n"
+                        printf "%bAdding: %s\\n" "$COLOR_BLUE" "$line"
                         line=${line#"$mount_dir"}
                         echo "$line" >> "$list_file"
                     else
@@ -977,7 +901,7 @@ function func_list {
 
                         if [ -n "$file_audio_codec" ] || [ -n "$file_video_codec" ]; then
                             if [ "$file_audio_codec" != "$audio_codec" ] || [ "$file_video_codec" != "$video_codec" ]; then
-                                printf "\\e[34mAdding: $line\\n"
+                                printf "%bAdding: %s\\n" "$COLOR_BLUE" "$line"
                                 line=${line#"$mount_dir"}
                                 echo "$line" >> "$list_file"
                             fi
@@ -989,388 +913,386 @@ function func_list {
                 fi
             fi
         else
-            printf "\\e[94mSkipping (already encoded): $line\\n"
+            printf "%bSkipping (already encoded): %s\\n" "$COLOR_BLUE" "$line"
         fi
     done < <(find "$media_dir" -name '*.avi' -or -name '*.flv' -or -name '*.m4b' -or -name '*.mkv' -or -name '*.mov' -or -name '*.mp3' -or -name '*.mp4' -or -name '*.ts' -or -name '*.mpg' -or -name '*.wmv')
-    printf "\\e[32mScan complete! Run plexus encode to process the list.\\n\\e[0m"
+    printf "%bScan complete! Run plexus encode to process the list.\\n%b" "$COLOR_GREEN" "$COLOR_RESET"
 }
 
 function func_mount {
-    printf "\\e[36mMounting Rclone remote to $media_dir\\n\\e[0m"
+    printf "%bMounting Rclone remote to %s\\n%b" "$COLOR_CYAN" "$media_dir" "$COLOR_RESET"
     if ! $rclone_binary mount "$rclone_remote" "$media_dir" --allow-other --buffer-size 256M --dir-cache-time 72h --drive-chunk-size 32M --log-level INFO --log-file "$HOME"/.plexus/logs/rclone.log --timeout 1h --umask 002 --vfs-read-chunk-size 128M --vfs-read-chunk-size-limit off &
     then
-        printf "\\nAn uknown error occurred (does the remote exist?)\\n\\e[0m"
+        printf "\\nAn uknown error occurred (does the remote exist?)\\n%s" "$COLOR_RESET"
     else
-        printf "\\n\\e[32mThe Rclone remote has successfully been mounted!\\n\\e[0m"
+        printf "\\n%bThe Rclone remote has successfully been mounted!\\n%b" "$COLOR_GREEN" "$COLOR_RESET"
     fi
 }
 
 function func_unmount {
-    if [ -d "$media_dir" ]; then
-        printf "\\e[36mUnmounting Rclone remote from $media_dir\\n\\e[0m"
+    if [ ! -d "$media_dir" ]; then
+        printf "%bUnmounting Rclone remote from %s\\n%b" "$COLOR_CYAN" "$media_dir" "$COLOR_RESET"
         fusermount -uz "$media_dir"
-        printf "\\n\\e[32mThe Rclone remote has successfully been unmounted!\\n\\e[0m"
+        printf "\\n%bThe Rclone remote has successfully been unmounted!\\n%b" "$COLOR_GREEN" "$COLOR_RESET"
     else
-        printf "\\e[31mThe directory does not exist.\\n\\e[0m"
+        printf "%bThe directory does not exist.\\n%b" "$COLOR_RED" "$COLOR_RESET"
     fi
 }
 
-if [ -z "$1" ]; then
-    printf "$HEADER_TEXT"
-    func_help
-    exit 0
-fi
-command=$1
-subcommand=$2
-shift
-printf "$HEADER_TEXT"
-case "$command" in
-    about)
-        func_about
-        ;;
-    blacklist)
-        if [ $OPTIND -eq 1 ]; then
-            printf "\\n\\e[39mUsage:\\n  plexus blacklist \"/path/to/file.ext\"\\n"
-            exit 0
-        else
-            file="${subcommand,,}"
-            func_blacklist
-        fi
-        ;;
-    config)
-        func_config
-        ;;
-    encode)
-        while getopts ":a:c:fl:p:r:v:-:" opt; do
-            case $opt in
-                a)
-                    if [ -z "${OPTARG,,}" ]; then
-                        if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
-                            printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
-                            exit 0
-                        else
-                            printf "\\n\\e[93mYou've specified no audio codec, enabling video-only mode"
-                            encode_audio_codec="$audio_codec"
-                            audio_codec=""
-                        fi
-                    else
-                        check_variable audio "${OPTARG,,}"
-                        if [ "$audio_codec" = "null" ]; then
-                            printf "You have not entered a supported audio codec.\\n"
-                            exit 0
-                        fi
-                    fi
-                    ;;
-                c)
-                    if [ -z "${OPTARG,,}" ]; then
-                        if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
-                            printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
-                            exit 0
-                        else
-                            media_container=""
-                        fi
-                    else
-                        check_variable container "${OPTARG,,}"
-                        if [ "$media_container" = "null" ]; then
-                            printf "You have not entered a supported media container.\\n"
-                            exit 0
-                        fi
-                    fi
-                    ;;
-                f)
-                    force_overwrite="true"
-                    ;;
-                l)
-                    if [ -f "$OPTARG" ]; then
-                        list_file="$OPTARG"
-                    else
-                        printf "You have not entered a valid list file.\\n"
-                        exit 1
-                    fi
-                    ;;
-                p)
-                    check_variable ffmpeg_preset "${OPTARG,,}"
-                    if [ $ffmpeg_preset = "null" ]; then
-                        printf "You have not entered a valid ffmpeg preset.\\n"
-                        exit 0
-                    fi
-                    ;;
-                r)
-                    $rclone_binary listremotes > "$HOME"/.plexus/rclone/remotes.txt
-                    if [ -n "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]; then
-                        if [ "${OPTARG: -1}" == ":" ]; then
-                            rclone_remote="$OPTARG"
-                        else
-                            rclone_remote="$OPTARG:"
-                        fi
-                        remote_transfer=true
-                    else
-                        printf "You have not entered a valid remote.\\n"
-                        exit 0
-                    fi
-                    ;;
-                v)
-                    if [ -z "${OPTARG,,}" ]; then
-                        if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
-                            printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
-                            exit 0
-                        else
-                            printf "\\n\\e[93mYou've specified no video codec, enabling audio-only mode"
-                            video_codec=""
-                        fi
-                    else
-                        check_variable video "${OPTARG,,}"
-                        if [ "$video_codec" = "null" ]; then
-                            printf "You have not entered a supported video codec.\\n"
-                            exit 0
-                        fi
-                    fi
-                    ;;
-                -)
-                    val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
-                    case ${OPTARG} in
-                        "bwlimit"*)
-                            rclone_bwlimit="$val"
-                            ;;
-                        "hwaccel"*)
-                            hardware_acceleration="true"
-                            ;;
-                        "verbose"*)
-                            verbose="true"
-                            ;;
-                    esac
-                    ;;
-                \?)
-                    echo "Invalid option: -$OPTARG." >&2
-                    exit 1
-                    ;;
-                :)
-                    echo "Option -$OPTARG requires an argument." >&2
-                    exit 1
-                    ;;
-            esac
-        done
-        if [ $OPTIND -eq 1 ]; then
-            printf "\\n\\e[39mUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -c              Media container. Default = $media_container\\n  -f              Force overwrite. Default = $force_overwrite\\n  -l              List location. Default = $list_file\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n  -r              Rclone remote. Use this for Rclone integration\\n  -v              Video codec. Default = $video_codec\\n  --bwlimit       Limit Rclone's active connection speed\\n  --hwaccel       Enabled hardware acceleration. Default = $hardware_acceleration\\n  --verbose       Show detailed log\\n"
-            exit 0
-        fi
-        if [ -n "$list_file" ]; then
-            if [ -n "$ffmpeg_binary" ]; then
-                if [ -n "$rsync_binary" ]; then
-                    func_encode
-                else
-                    printf "\\e[31mPlease install rsync to use this command\\e[0m\\n"
-                    exit 0
-                fi
-            else
-                printf "\\e[31mPlease install ffmpeg to use this command\\e[0m\\n"
+function main() {
+    printf "%b" "$HEADER_TEXT"
+
+    # run setup function to initialize the config
+    setup
+
+    # if no command is specified, print the default help text
+    if [ -z "$1" ]; then
+        func_help
+        exit 0
+    fi
+
+    # fill command variables to keep things readable
+    command=$1
+    subcommand=$2
+    shift
+
+    # handle different commands
+    case "$command" in
+        about)
+            printf "\\nPlexus is a simple tool to mass re-encode your media collection.\\nIt compiles a list of your media files which do not currently\\ncontain your preferred codecs. It can then re-encode all of that media\\nfor you, even if the media is stored on remote storage (via Rclone).\\n\\nI created Plexus because I needed a simple CLI tool for\\nre-encoding all of my media, and every other solution ended\\nup being more complex than I needed them to be.\\n\\n- Robert Thomas\\n  Lead Software Engineer at Level Zero Technology\\n  https://github.com/wolveix\\n"
+            ;;
+        blacklist)
+            if [ $OPTIND -eq 1 ]; then
+                printf "\\n%bUsage:\\n  plexus blacklist \"/binary_path/to/file.ext\"\\n" "$COLOR_RESET"
                 exit 0
+            else
+                file="${subcommand,,}"
+                func_blacklist
             fi
-        else
-            printf "You must specify a list file.\\n"
-        fi
-        shift $((OPTIND -1))
-        ;;
-    help)
-        case "${subcommand,,}" in
-            "about")
-                printf "This command tells you more about it's creation.\\n"
-                ;;
-            "encode")
-                printf "\n\\e[39mAbout:\\n  The encode command processes a list generated from the list\\n  command and converts each listed file into two proposed codecs\\n  (set to H264 and AAC by default)\\n\\nUsage:\\n  plexus encode -l /path/to/list.txt [flags]\\n  plexus encode -l /path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n                  This allows you to set a preferred audio codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  -f              Force overwrite. Default = $force_overwrite\\n                  The newly encoded file will overwrite the\\n                  existing file\\n\\n  -l              List location. Default = $list_file\\n                  This is where your previously generated list file\\n                  is\\n\\n  -p              FFMpeg preset. Default = $ffmpeg_preset\\n                  This is the FFmpeg preset that will be used when\\n                  encoding your media\\n\\n  -r              Rclone remote. Use this for Rclone integration\\n                  Don't use this if you're converting local media.\\n                  This points Plexus to your pre-configured Rclone\\n                  remote\\n\\n  -v              Video codec. Default = $video_codec\\n                  This allows you to set a preferred video codec\\n                  on runtime, rather than setting a default via\\n                  the config function\\n\\n  --bwlimit       Limit Rclone's active connection speed\\n                  To prevent using too much bandwidth, you can\\n                  set an active limit in KB/s\\n\\n  --verbose       Show detailed log\\n                  Shows you a more detailed log of what's happening.\\n                  Use this when expriencing issues\\n"
-                ;;
-            *)
-                func_help
-                ;;
-        esac
-        ;;
-    install)
-        func_install
-        shift $((OPTIND -1))
-        ;;
-    list)
-        while getopts ":a:b:c:d:l:m:v:" opt; do
-            case $opt in
-                a)
-                    if [ -z "${OPTARG,,}" ]; then
-                        if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
-                            printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
-                            exit 0
-                        else
-                            printf "\\n\\e[93mYou've specified no audio codec, enabling video-only mode"
+            ;;
+        config)
+            func_config
+            ;;
+        encode)
+            while getopts ":a:c:fl:p:r:v:-:" opt; do
+                case $opt in
+                    a)
+                        if [ -z "${OPTARG,,}" ]; then
+                            if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
+                                printf "\\n%bPlease specify at least one of the following: audio code, media container, video codec.\\n" "$COLOR_RED"
+                                exit 1
+                            fi
+
+                            printf "\\n%bYou've specified no audio codec, enabling video-only mode" "$COLOR_YELLOW"
                             encode_audio_codec="$audio_codec"
                             audio_codec=""
-                        fi
-                    else
-                        check_variable audio "${OPTARG,,}"
-                        if [ "$audio_codec" = "null" ]; then
-                            printf "You have not entered a supported audio codec.\\n"
-                            exit 0
-                        fi
-                    fi
-                    ;;
-                b)
-                    if [ -f "${OPTARG,,}" ]; then
-                        blacklist_file=${OPTARG,,}
-                    else
-                        printf "\\n\\e[31mBlacklist does not exist.\\n"
-                        exit 0
-                    fi
-                    ;;
-                c)
-                    if [ -z "${OPTARG,,}" ]; then
-                        if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
-                            printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
-                            exit 0
                         else
+                            check_variable audio "${OPTARG,,}"
+                            if [ "$audio_codec" = "null" ]; then
+                                printf "You have not entered a supported audio codec.\\n"
+                                exit 1
+                            fi
+                        fi
+                        ;;
+                    c)
+                        if [ -z "${OPTARG,,}" ]; then
+                            if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
+                                printf "\\n%bYou've specified no audio or video codec, or a media container. Please specify at least one\\n" "$COLOR_RED"
+                                exit 1
+                            fi
+
                             media_container=""
-                        fi
-                    else
-                        check_variable container "${OPTARG,,}"
-                        if [ "$media_container" = "null" ]; then
-                            printf "You have not entered a supported media container.\\n"
-                            exit 0
-                        fi
-                    fi
-                    ;;
-                d)
-                    if [ -d "$OPTARG" ]; then
-                        if [ "${OPTARG: -1}" == "/" ]; then
-                            media_dir="${OPTARG::-1}"
                         else
-                            media_dir="$OPTARG"
+                            check_variable container "${OPTARG,,}"
+                            if [ "$media_container" = "null" ]; then
+                                printf "You have not entered a supported media container.\\n"
+                                exit 1
+                            fi
                         fi
-                    else
-                        printf "You have not entered a valid directory.\\n"
-                        exit 1
-                    fi
-                    ;;
-                l)
-                    list_file="$OPTARG"
-                    list_dir=$(dirname "${list_file}")
+                        ;;
+                    f)
+                        force_overwrite="true"
+                        ;;
+                    l)
+                        if [ ! -f "$OPTARG" ]; then
+                            printf "You have not entered a valid list file.\\n"
+                            exit 1
+                        fi
 
-                    if [ ! -d "$list_dir" ]; then
-                        printf "You have not entered a valid list directory.\\n"
-                        exit 1
-                    fi
-                    ;;
-                m)
-                    mount_dir="$OPTARG"
-
-                    if [ ! -d "$mount_dir" ]; then
-                        printf "You have not entered a valid mount directory.\\n"
-                        exit 1
-                    fi
-                    ;;
-                v)
-                    if [ -z "${OPTARG,,}" ]; then
-                        if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
-                            printf "\\n\\e[31mYou've specified no audio or video codec, or a media container. Please specify at least one\\n"
-                            exit 0
-                        else
-                            printf "\\n\\e[93mYou've specified no video codec, enabling audio-only mode"
-                            video_codec=""
+                        list_file="$OPTARG"
+                        ;;
+                    p)
+                        check_variable ffmpeg_preset "${OPTARG,,}"
+                        if [ $ffmpeg_preset = "null" ]; then
+                            printf "You have not entered a valid ffmpeg preset.\\n"
+                            exit 1
                         fi
-                    else
-                        check_variable video "${OPTARG,,}"
-                        if [ "$video_codec" = "null" ]; then
-                            printf "You have not entered a supported video codec.\\n"
-                            exit 0
-                        fi
-                    fi
-                    ;;
-                \?)
-                    printf "Invalid option: -$OPTARG.\\n"
-                    exit 1
-                    ;;
-                :)
-                    printf "Option -$OPTARG requires an argument.\\n"
-                    exit 1
-                    ;;
-            esac
-        done
-        if [ $OPTIND -eq 1 ]; then
-            printf "\\n\\e[39mUsage:\\n  plexus list -d /path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = $audio_codec\\n  -b              Blacklist. Default = $blacklist_file\\n  -c              Media container. Default = $media_container\\n  -d              Media directory. Default = $media_dir\\n  -l              List location. Default = $list_file\\n  -m              Mount path, used for Rclone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n"
-            exit 0
-        fi
-        func_list
-        shift $((OPTIND -1))
-        ;;
-    mount)
-        if [ -n "$fusermount_binary" ]; then
-            if [ -n "$rclone_binary" ]; then
-                while getopts ":r:" opt; do
-                    case $opt in
-                        r)
-                            if [ "${OPTARG: -1}" == ":" ]; then
-                                rclone_remote="$OPTARG"
-                            else
+                        ;;
+                    r)
+                        $rclone_binary listremotes > "$HOME"/.plexus/rclone/remotes.txt
+                        if [ -n "$(grep "$OPTARG" "$HOME/.plexus/rclone/remotes.txt")" ]; then
+                            rclone_remote="$OPTARG"
+                            if [ "${OPTARG: -1}" != ":" ]; then
                                 rclone_remote="$OPTARG:"
                             fi
-                            ;;
-                        \?)
-                            printf "Invalid option: -$OPTARG.\\n"
-                            exit 1
-                            ;;
-                        :)
-                            printf "Option -$OPTARG requires an argument.\\n"
-                            exit 1
-                            ;;
-                    esac
-                done
-                if [ $OPTIND -eq 1 ]; then
-                    printf "\\e[39mUsage:\\n  plexus mount -r RcloneRemote:\\n\\nFlags:\\n  -r              Rclone remote. Setup via rclone config\\n"
-                    exit 0
-                fi
-                func_mount
-                shift $((OPTIND -1))
-            else
-                printf "\\e[31mPlease install rclone to use this command\\e[0m\\n"
+                            remote_transfer=true
+                        else
+                            printf "You have not entered a valid remote.\\n"
+                            exit 0
+                        fi
+                        ;;
+                    v)
+                        if [ -z "${OPTARG,,}" ]; then
+                            if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
+                                printf "\\n%bYou've specified no audio or video codec, or a media container. Please specify at least one\\n" "$COLOR_RED"
+                                exit 1
+                            fi
+
+                            printf "\\n%bYou've specified no video codec, enabling audio-only mode" "$COLOR_YELLOW"
+                            video_codec=""
+                        else
+                            check_variable video "${OPTARG,,}"
+                            if [ "$video_codec" = "null" ]; then
+                                printf "You have not entered a supported video codec.\\n"
+                                exit 1
+                            fi
+                        fi
+                        ;;
+                    -)
+                        val="${!OPTIND}"; OPTIND=$(( $OPTIND + 1 ))
+                        case ${OPTARG} in
+                            "bwlimit"*)
+                                rclone_bwlimit="$val"
+                                ;;
+                            "hwaccel"*)
+                                hardware_acceleration="true"
+                                ;;
+                            "verbose"*)
+                                verbose="true"
+                                ;;
+                        esac
+                        ;;
+                    \?)
+                        echo "Invalid option: -$OPTARG." >&2
+                        exit 1
+                        ;;
+                    :)
+                        echo "Option -$OPTARG requires an argument." >&2
+                        exit 1
+                        ;;
+                esac
+            done
+
+            if [ $OPTIND -eq 1 ]; then
+                printf "\\n%bUsage:\\n  plexus encode -l /binary_path/to/list.txt [flags]\\n  plexus encode -l /binary_path/to/list.txt -r RcloneRemote: [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = %s\\n  -c              Media container. Default = %s\\n  -f              Force overwrite. Default = %s\\n  -l              List location. Default = %s\\n  -p              FFMpeg preset. Default = %s\\n  -r              Rclone remote. Use this for Rclone integration\\n  -v              Video codec. Default = %s\\n  --bwlimit       Limit Rclone's active connection speed\\n  --hwaccel       Enabled hardware acceleration. Default = $hardware_acceleration\\n  --verbose       Show detailed log\\n" "$COLOR_RESET" "$audio_codec" "$media_container" "$force_overwrite" "$list_file" "$ffmpeg_preset" "$video_codec"
                 exit 0
             fi
-        else
-            printf "\\e[31mPlease install fuse to use this command\\e[0m\\n"
-            exit 0
-        fi
-        ;;
-    unmount)
-        if [ -n "$fusermount_binary" ]; then
-            if [ -n "$rclone_binary" ]; then
-                while getopts ":d:" opt; do
-                    case $opt in
-                        d)
-                            media_dir=$OPTARG
-                            ;;
-                        \?)
-                            printf "Invalid option: -$OPTARG.\\n"
+
+            if [ -z "$list_file" ]; then
+                printf "Please specify a list file.\\n"
+                exit 1
+            fi
+
+            if [ -z "$ffmpeg_binary" ]; then
+                printf "%bPlease install ffmpeg to use this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                exit 1
+            fi
+
+            if [ -z "$rsync_binary" ]; then
+                printf "%bPlease install rsync to use this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                exit 1
+            fi
+
+            func_encode
+            shift $((OPTIND -1))
+            ;;
+        help)
+            func_help "$subcommand"
+            ;;
+        install)
+            func_install
+            shift $((OPTIND -1))
+            ;;
+        list)
+            while getopts ":a:b:c:d:l:m:v:" opt; do
+                case $opt in
+                    a)
+                        if [ -z "${OPTARG,,}" ]; then
+                            if [ -z "$media_container" ] && [ -z "$video_codec" ]; then
+                                printf "\\n%bYou've specified no audio or video codec, or a media container. Please specify at least one\\n" "$COLOR_RED"
+                                exit 1
+                            fi
+
+                            printf "\\n%bYou've specified no audio codec, enabling video-only mode" "$COLOR_YELLOW"
+                            encode_audio_codec="$audio_codec"
+                            audio_codec=""
+                        else
+                            check_variable audio "${OPTARG,,}"
+                            if [ "$audio_codec" = "null" ]; then
+                                printf "You have not entered a supported audio codec.\\n"
+                                exit 1
+                            fi
+                        fi
+                        ;;
+                    b)
+                        if [ ! -f "${OPTARG,,}" ]; then
+                            printf "\\n%bBlacklist does not exist.\\n" "$COLOR_RED"
                             exit 1
-                            ;;
-                        :)
-                            printf "Option -$OPTARG requires an argument.\\n"
+                        fi
+                        blacklist_file=${OPTARG,,}
+                        ;;
+                    c)
+                        if [ -z "${OPTARG,,}" ]; then
+                            if [ -z "$audio_codec" ] && [ -z "$video_codec" ]; then
+                                printf "\\n%bYou've specified no audio or video codec, or a media container. Please specify at least one\\n" "$COLOR_RED"
+                                exit 1
+                            fi
+                            media_container=""
+                        else
+                            check_variable container "${OPTARG,,}"
+                            if [ "$media_container" = "null" ]; then
+                                printf "You have not entered a supported media container.\\n"
+                                exit 1
+                            fi
+                        fi
+                        ;;
+                    d)
+                        if [ -d "$OPTARG" ]; then
+                            if [ "${OPTARG: -1}" == "/" ]; then
+                                media_dir="${OPTARG::-1}"
+                            else
+                                media_dir="$OPTARG"
+                            fi
+                        else
+                            printf "You have not entered a valid directory.\\n"
                             exit 1
-                            ;;
-                    esac
-                done
-                if [ $OPTIND -eq 1 ]; then
-                    printf "\\e[39mUsage:\\n  plexus unmount -d /path/to/mounted/media/\\n\\nFlags:\\n  -d              Media directory.\\n"
-                    exit 0
-                fi
-                func_unmount
-                shift $((OPTIND -1))
-            else
-                printf "\\e[31mPlease install rclone to use this command\\e[0m\\n"
+                        fi
+                        ;;
+                    l)
+                        list_file="$OPTARG"
+                        list_dir=$(dirname "${list_file}")
+
+                        if [ ! -d "$list_dir" ]; then
+                            printf "You have not entered a valid list directory.\\n"
+                            exit 1
+                        fi
+                        ;;
+                    m)
+                        mount_dir="$OPTARG"
+
+                        if [ ! -d "$mount_dir" ]; then
+                            printf "You have not entered a valid mount directory.\\n"
+                            exit 1
+                        fi
+                        ;;
+                    v)
+                        if [ -z "${OPTARG,,}" ]; then
+                            if [ -z "$audio_codec" ] && [ -z "$media_container" ]; then
+                                printf "\\n%bYou've specified no audio or video codec, or a media container. Please specify at least one\\n" "$COLOR_RED"
+                                exit 1
+                            fi
+
+                            printf "\\n%bYou've specified no video codec, enabling audio-only mode" "$COLOR_YELLOW"
+                            video_codec=""
+                        else
+                            check_variable video "${OPTARG,,}"
+                            if [ "$video_codec" = "null" ]; then
+                                printf "You have not entered a supported video codec.\\n"
+                                exit 1
+                            fi
+                        fi
+                        ;;
+                    \?)
+                        printf "Invalid option: -%s.\\n" "$OPTARG"
+                        exit 1
+                        ;;
+                    :)
+                        printf "Option -%s requires an argument.\\n" "$OPTARG"
+                        exit 1
+                        ;;
+                esac
+            done
+            if [ $OPTIND -eq 1 ]; then
+                printf "\\n%bUsage:\\n  plexus list -d /binary_path/to/media [flags]\\n\\nFlags:\\n  -a              Audio codec. Default = %s\\n  -b              Blacklist. Default = %s\\n  -c              Media container. Default = %s\\n  -d              Media directory. Default = %s\\n  -l              List location. Default = %s\\n  -m              Mount binary_path, used for Rclone. Removed from the beginning of each list line\\n  -v              Video codec. Default = $video_codec\\n" "$COLOR_RESET" "$audio_codec" "$blacklist_file" "$media_container" "$media_dir" "$list_file"
                 exit 0
             fi
-        else
-            printf "\\e[31mPlease install fuse to use this command\\e[0m\\n"
+            func_list
+            shift $((OPTIND -1))
+            ;;
+        mount)
+            if [ -z "$fusermount_binary" ]; then
+                printf "%bPlease install fuse to use this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                exit 1
+            fi
+
+            if [ -z "$rclone_binary" ]; then
+                printf "%bPlease install rclone to use this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                exit 1
+            fi
+
+            while getopts ":r:" opt; do
+                case $opt in
+                    r)
+                        rclone_remote="$OPTARG"
+                        if [ "${OPTARG: -1}" != ":" ]; then
+                            rclone_remote="$OPTARG:"
+                        fi
+                        ;;
+                    \?)
+                        printf "Invalid option: -%s.\\n" $OPTARG
+                        exit 1
+                        ;;
+                    :)
+                        printf "Option -%s requires an argument.\\n" $OPTARG
+                        exit 1
+                        ;;
+                esac
+            done
+            if [ $OPTIND -eq 1 ]; then
+                printf "%bUsage:\\n  plexus mount -r RcloneRemote:\\n\\nFlags:\\n  -r              Rclone remote. Setup via rclone config\\n" "$COLOR_RESET"
+                exit 0
+            fi
+            func_mount
+            shift $((OPTIND -1))
+            ;;
+        unmount)
+            if [ -z "$fusermount_binary" ]; then
+                printf "%bPlease install fuse to use this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                exit 1
+            fi
+
+            if [ -z "$rclone_binary" ]; then
+                printf "%bPlease install rclone to use this command%b\\n" "$COLOR_RED" "$COLOR_RESET"
+                exit 1
+            fi
+
+            while getopts ":d:" opt; do
+                case $opt in
+                    d)
+                        media_dir=$OPTARG
+                        ;;
+                    \?)
+                        printf "Invalid option: -%s.\\n" "$OPTARG"
+                        exit 1
+                        ;;
+                    :)
+                        printf "Option -%s requires an argument.\\n" "$OPTARG"
+                        exit 1
+                        ;;
+                esac
+            done
+            if [ $OPTIND -eq 1 ]; then
+                printf "%bUsage:\\n  plexus unmount -d /binary_path/to/mounted/media/\\n\\nFlags:\\n  -d              Media directory.\\n" "$COLOR_RESET"
+                exit 0
+            fi
+            func_unmount
+            shift $((OPTIND -1))
+            ;;
+        *)
+            printf "This is not a valid command.\\nSee 'plexus help' for more information.\\n"
             exit 0
-        fi
-        ;;
-    *)
-        printf "This is not a valid command.\\nSee 'plexus help' for more information.\\n"
-        exit 0
-        ;;
-esac
-### COMMAND HANDLER ###
+            ;;
+    esac
+}
 
 main "$@"
